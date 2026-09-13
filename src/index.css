@@ -1,0 +1,181 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #131315;
+  --color-surface-dim: #131315;
+  --color-surface-bright: #39393b;
+  --color-surface-container-lowest: #0e0e10;
+  --color-surface-container-low: #1b1b1d;
+  --color-surface-container: #1f1f21;
+  --color-surface-container-high: #2a2a2c;
+  --color-surface-container-highest: #353437;
+  --color-surface-variant: #353437;
+
+  --color-on-surface: #e4e2e4;
+  --color-on-surface-variant: #dbc1b4;
+  --color-inverse-surface: #e4e2e4;
+  --color-inverse-on-surface: #303032;
+
+  --color-outline: #a38c80;
+  --color-outline-variant: #554339;
+
+  --color-primary: #ffb68c;
+  --color-on-primary: #532200;
+  --color-primary-container: #d97736;
+  --color-on-primary-container: #491d00;
+  --color-inverse-primary: #994703;
+  --color-primary-fixed: #ffdbc9;
+  --color-primary-fixed-dim: #ffb68c;
+
+  --color-secondary: #f9ba78;
+  --color-on-secondary: #492900;
+  --color-secondary-container: #673d03;
+  --color-on-secondary-container: #e5a968;
+  --color-secondary-fixed: #ffdcbc;
+  --color-secondary-fixed-dim: #f9ba78;
+
+  --color-tertiary: #8ed5b4;
+  --color-on-tertiary: #003826;
+  --color-tertiary-container: #589e7f;
+  --color-on-tertiary-container: #003121;
+  --color-tertiary-fixed: #a9f2cf;
+  --color-tertiary-fixed-dim: #8ed5b4;
+
+  --color-error: #ffb4ab;
+  --color-on-error: #690005;
+  --color-error-container: #93000a;
+  --color-on-error-container: #ffdad6;
+
+  --font-headline: 'Literata', Georgia, serif;
+  --font-body: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --spacing-gutter: 1.25rem;
+  --spacing-gutter-mobile: 0.75rem;
+  --spacing-margin: 2rem;
+  --spacing-margin-mobile: 1rem;
+  --spacing-space-xs: 0.25rem;
+  --spacing-space-sm: 0.5rem;
+  --spacing-space-md: 1rem;
+  --spacing-space-lg: 1.5rem;
+  --spacing-space-xl: 2.5rem;
+}
+
+@layer base {
+  html, body {
+    background-color: #131315;
+    color: #e4e2e4;
+    font-family: 'Be Vietnam Pro', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* Hide scrollbars while preserving scrolling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #131315;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #2a2a2c;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3a3942;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+/* Typography Utility Aliases */
+.font-headline-xl {
+  font-family: 'Literata', serif;
+  font-size: 2.5rem;
+  line-height: 3rem;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+.font-headline-lg {
+  font-family: 'Literata', serif;
+  font-size: 1.875rem;
+  line-height: 2.375rem;
+  letter-spacing: -0.015em;
+  font-weight: 500;
+}
+.font-headline-md {
+  font-family: 'Literata', serif;
+  font-size: 1.375rem;
+  line-height: 1.875rem;
+  letter-spacing: -0.01em;
+  font-weight: 500;
+}
+.font-title-lg {
+  font-family: 'Literata', serif;
+  font-size: 1.125rem;
+  line-height: 1.625rem;
+  font-weight: 600;
+}
+.font-title-md {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+}
+.font-body-lg {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 1rem;
+  line-height: 1.625rem;
+}
+.font-body-md {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+}
+.font-body-sm {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+}
+.font-label-md {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+  letter-spacing: 0.02em;
+}
+.font-label-sm {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  letter-spacing: 0.04em;
+}
+.font-code-snippet {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+
+/* Perspective for 3D flip card */
+.perspective {
+  perspective: 1000px;
+}
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+}
+

@@ -1,0 +1,10 @@
+{
+  "name": "Scholar Codex: Study Desk",
+  "description": "Archival scholarly study desk and epistemic research codex with AI-grounded dialectics, interactive study cards, audio memos, and source synthesis.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

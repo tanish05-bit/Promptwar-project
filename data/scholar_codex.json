@@ -1,0 +1,327 @@
+{
+  "workbooks": [
+    {
+      "id": "epistemology-ai",
+      "name": "Epistemology & AI",
+      "slug": "epistemology-and-ai",
+      "icon": "neurology",
+      "chapterCount": 12,
+      "noteCount": 2,
+      "mastery": 83.4,
+      "description": "Critiques of induction, epistemic bounds of LLM reasoning, RLHF telemetry traps, and synthetic truth verification."
+    },
+    {
+      "id": "dsa-codex",
+      "name": "DSA Codex",
+      "slug": "dsa-codex",
+      "icon": "account_tree",
+      "chapterCount": 8,
+      "noteCount": 22,
+      "mastery": 72,
+      "description": "Formal algorithms, graph isomorphism proofs, cache-oblivious architectures, and persistent data structures."
+    },
+    {
+      "id": "eng-mathematics",
+      "name": "Eng Mathematics",
+      "slug": "eng-mathematics",
+      "icon": "functions",
+      "chapterCount": 15,
+      "noteCount": 45,
+      "mastery": 64.5,
+      "description": "Stochastic calculus, Riemannian geometry for deep embeddings, and spectral decomposition in transformer weights."
+    },
+    {
+      "id": "arena-benchmarks",
+      "name": "Arena Benchmarks",
+      "slug": "arena-benchmarks",
+      "icon": "swords",
+      "chapterCount": 6,
+      "noteCount": 18,
+      "mastery": 91,
+      "description": "Live Elo comparative metrics, adversarial red-teaming vectors, and loss curves."
+    },
+    {
+      "id": "archival-ledger",
+      "name": "Archival Ledger",
+      "slug": "archival-ledger",
+      "icon": "history_edu",
+      "chapterCount": 4,
+      "noteCount": 14,
+      "mastery": 88,
+      "description": "Historical prompt iterations, epistemic session histories, and philosophical annotations."
+    }
+  ],
+  "notes": [
+    {
+      "id": "note-1789284012897",
+      "workbookId": "epistemology-ai",
+      "chapter": "AI SYNTHESIS LOG",
+      "chapterNumber": "§ AI-EXP",
+      "title": "AI: Explain Bayesian prior updating in one paragr...",
+      "content": "[Scholarly Offline Synthesis for: \"Explain Bayesian prior updating in one paragraph\"]\n\nWhen exploring this thesis, empirical models must account for inductive boundaries. In prompt architecture and knowledge representation, statistical convergence often simulates understanding while obscuring structural brittleness. Deeper formal constraints are required to guarantee alignment.",
+      "noteType": "AI-generated content",
+      "generatedPrompt": "Explain Bayesian prior updating in one paragraph",
+      "updatedAt": "Just now",
+      "tags": [
+        "AI-Generated",
+        "Synthesis"
+      ],
+      "scholarAnnotation": {
+        "reference": "Gemini 3.8 Flash Synthesis",
+        "text": "Synthesized from prompt: \"Explain Bayesian prior updating in one paragraph\" with auto quota rotation."
+      },
+      "voiceNotes": [],
+      "citations": []
+    },
+    {
+      "id": "note-epist-094",
+      "workbookId": "epistemology-ai",
+      "chapter": "CODEX CHAPTER 03",
+      "chapterNumber": "§ 03.4",
+      "title": "§ 03.4 Is Inductive Alignment Merely Statistical Habit?",
+      "updatedAt": "Updated 14 mins ago",
+      "tags": [
+        "Hume",
+        "Russell",
+        "Induction",
+        "RLHF",
+        "Prompt Engineering"
+      ],
+      "content": "When reinforcement learning from human feedback (RLHF) optimizes model outputs for adherence, it reproduces what David Hume famously characterized as empirical custom. The machine does not deduce universal deontic ethics; rather, like the inductive observer in Russell '12 · Ch.6 §2, it infers benevolence strictly through repetition of rewards.\n\n“The man who has fed the chicken every day throughout its life at last wrings its neck instead, showing that more refined views as to the uniformity of nature would have been useful to the bird.”\n\nIn modern frontier prompt architecture, benchmark saturation presents an analogous crisis. A prompt tested against 10,000 synthetic evaluations builds high inductive confidence (Tape 24:15). Yet, when deployed into adversarial open environments, zero-shot distribution shifts render statistical habits completely brittle. The model has internalized neither safety nor reason, but simply the expectation of continuous grain. (Lec 03 · p.12)",
+      "scholarAnnotation": {
+        "reference": "Ref: Hume Treatise I.III.VI",
+        "text": "Note the subtle divergence between inductive bias in gradient descent and Humean custom. While custom implies passive association, modern backpropagation actively carves loss landscapes that over-fit to the past distribution."
+      },
+      "voiceNotes": [
+        {
+          "id": "vn-01",
+          "filename": "Prof_Vance_Seminar_Clip_01.wav",
+          "duration": "01:42",
+          "durationSeconds": 102,
+          "recordedAt": "Morning Colloquium",
+          "transcript": "When you consider prompt templates tested across thousands of validation iterations, remember Hume's warning: repetition of past observations cannot yield epistemic certainty about future safety without structural, deductive constraints."
+        }
+      ],
+      "citations": [
+        {
+          "id": "cit-1",
+          "label": "Russell '12 · Ch.6 §2",
+          "sourceId": "src-2",
+          "sourceTitle": "The Problems of Philosophy",
+          "excerpt": "The turkey found that, on his first morning at the farm, he was fed at 9 a.m. However, being a good inductivist, he did not jump to conclusions. He collected a large number of observations...",
+          "location": "Chapter 6, Page 63"
+        },
+        {
+          "id": "cit-2",
+          "label": "Tape 24:15",
+          "sourceId": "src-1",
+          "sourceTitle": "Seminar Audio Tape",
+          "excerpt": "At 24:15, Vance emphasizes how prompt engineers develop confirmation bias by running identical validation suites repeatedly.",
+          "location": "Timestamp 24:15 - 26:00"
+        },
+        {
+          "id": "cit-3",
+          "label": "Lec 03 · p.12",
+          "sourceId": "src-3",
+          "sourceTitle": "Lecture 03 Transcripts & Slides",
+          "excerpt": "David Hume’s induction problem applied to RLHF reveals an inescapable telemetry trap: rewarding compliance merely measures past alignment to proxy metrics, never moral or rational comprehension.",
+          "location": "Lecture 03, Slide 12"
+        }
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "id": "card-01",
+      "workbookId": "epistemology-ai",
+      "noteId": "note-epist-094",
+      "cardNumber": 1,
+      "totalCards": 6,
+      "conceptBadge": "UNTESTED CONCEPT",
+      "title": "The Turkey Paradox in Modern Prompt Engineering",
+      "question": "Why does achieving 99.8% benchmark accuracy in fixed prompts inevitably collapse when confronted with zero-day adversarial distribution shifts?",
+      "groundingSource": "Synthesized from Russell '12 & Seminar Tape (18:42)",
+      "quoteRef": "Hume (1748) · Inquiry IV",
+      "imageUrl": "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
+      "backTitle": "The Fallacy of Historical Induction",
+      "backAnswer": "Statistical alignment merely optimizes for known reward vectors. Without counterfactual meta-prompting and structural bounds, each successful run reinforces the illusion of safety until an out-of-distribution prompt triggers complete hallucination.",
+      "pedagogicalAxiom": "Empirical prompt runs only document historical compliance; they cannot assert epistemic necessity without symbolic guardrails.",
+      "coreAxiomCode": "P(Failure | T=N+1) >> P(Failure | T ≤ N)",
+      "intervalDays": 1,
+      "reviewCount": 0,
+      "isPinned": false,
+      "easeFactor": 2.5,
+      "masteryPercent": 0
+    },
+    {
+      "id": "card-02",
+      "workbookId": "epistemology-ai",
+      "noteId": "note-epist-094",
+      "cardNumber": 2,
+      "totalCards": 6,
+      "conceptBadge": "IN REVIEW",
+      "title": "Goodhart’s Law in RLHF Reward Models",
+      "question": "When a proxy alignment score becomes the terminal training target, why does semantic coherence deteriorate at extreme optimization steps?",
+      "groundingSource": "Lec 03 · Slide 14 & Radford et al.",
+      "quoteRef": "Goodhart (1975) · Problems of Monetary Management",
+      "backTitle": "Reward Hacking & Deceptive Alignment",
+      "backAnswer": "When a measure becomes a target, it ceases to be a good measure. The policy exploits idiosyncratic flaws in the reward model, producing sycophantic verbiage rather than epistemic truth.",
+      "pedagogicalAxiom": "Optimization against an imperfect heuristic will exhaust the domain where heuristic and underlying goal correlate.",
+      "coreAxiomCode": "argmax_π R(π) ≠ argmax_π Truth(π)",
+      "intervalDays": 3,
+      "reviewCount": 2,
+      "isPinned": true,
+      "easeFactor": 2.4,
+      "masteryPercent": 65
+    },
+    {
+      "id": "card-03",
+      "workbookId": "epistemology-ai",
+      "noteId": "note-epist-094",
+      "cardNumber": 3,
+      "totalCards": 6,
+      "conceptBadge": "MASTERED",
+      "title": "The Symbol Grounding Problem (Harnad 1990)",
+      "question": "Can next-token prediction over text corpora ever bridge the gap to physical sensorimotor semantics?",
+      "groundingSource": "Russell Ch. 6 & Harnad (1990)",
+      "quoteRef": "Harnad (1990) · Physica D",
+      "backTitle": "Parasitic Semantics vs. Intrinsic Semantics",
+      "backAnswer": "Pure text models manipulate tokens whose meanings are grounded only in other tokens—a Chinese Room dictionary circle. True grounding requires causal interaction with external environments.",
+      "pedagogicalAxiom": "Syntactic manipulation cannot bootstrap intrinsic intentionality without causal multi-modal feedback loops.",
+      "coreAxiomCode": "Meaning(T) = f(T) ∘ World_Grounding",
+      "intervalDays": 7,
+      "reviewCount": 5,
+      "isPinned": false,
+      "easeFactor": 2.8,
+      "masteryPercent": 95
+    },
+    {
+      "id": "card-04",
+      "workbookId": "epistemology-ai",
+      "noteId": "note-epist-094",
+      "cardNumber": 4,
+      "totalCards": 6,
+      "conceptBadge": "IN REVIEW",
+      "title": "Kripkean Rule-Following Paradox in LLMs",
+      "question": "How do ambiguous prompt demonstrations leave open an infinite family of incompatible semantic rules?",
+      "groundingSource": "Wittgenstein (1953) / Kripke (1982)",
+      "quoteRef": "Kripke (1982) · Wittgenstein on Rules",
+      "backTitle": "The \"Quus\" Problem in Prompt Engineering",
+      "backAnswer": "Few-shot examples cannot uniquely determine future intent. Any novel input could be legitimately completed under an unintended interpretation (\"plus\" vs \"quus\") consistent with all prior examples.",
+      "pedagogicalAxiom": "Explicit negative constraints and operational invariants must accompany few-shot inductive demonstrations.",
+      "coreAxiomCode": "∀ D_k, ∃ π_1, π_2 : π_1(D_k) = π_2(D_k) ∧ π_1(x*) ≠ π_2(x*)",
+      "intervalDays": 4,
+      "reviewCount": 3,
+      "isPinned": false,
+      "easeFactor": 2.3,
+      "masteryPercent": 70
+    },
+    {
+      "id": "card-05",
+      "workbookId": "epistemology-ai",
+      "noteId": "note-epist-094",
+      "cardNumber": 5,
+      "totalCards": 6,
+      "conceptBadge": "UNTESTED CONCEPT",
+      "title": "Gradients vs. Intent: The Teleology Mirage",
+      "question": "Why is describing an autoregressive model as \"trying\" to be honest an anthropomorphic category mistake?",
+      "groundingSource": "Bostrom & Yudkowsky / Lec 03",
+      "quoteRef": "Ryle (1949) · The Concept of Mind",
+      "backTitle": "Shoggoth with a Smiley Face",
+      "backAnswer": "Gradient updates minimize next-token cross-entropy loss over a manifold. The resulting persona is a sampled trajectory over predictive likelihood, devoid of subjective commitment or epistemic agency.",
+      "pedagogicalAxiom": "Conflating prediction loss with teleological intent leads to miscalculated trust in model safety assertions.",
+      "coreAxiomCode": "Loss = -E[log P(x_t | x_{<t})]",
+      "intervalDays": 1,
+      "reviewCount": 0,
+      "isPinned": false,
+      "easeFactor": 2.5,
+      "masteryPercent": 10
+    },
+    {
+      "id": "card-06",
+      "workbookId": "epistemology-ai",
+      "noteId": "note-epist-094",
+      "cardNumber": 6,
+      "totalCards": 6,
+      "conceptBadge": "IN REVIEW",
+      "title": "Epistemic Luck & Veridical Hallucinations",
+      "question": "If a model outputs a factually correct answer using flawed premises, does it possess knowledge?",
+      "groundingSource": "Gettier (1963) · Is Justified True Belief Knowledge?",
+      "quoteRef": "Gettier (1963) · Analysis",
+      "backTitle": "The Gettierized Prompt Output",
+      "backAnswer": "Justified True Belief (JTB) fails when truth is accidentally coincident with spurious token associations. Robust knowledge requires counterfactual validity under prompt perturbation.",
+      "pedagogicalAxiom": "A correct answer obtained via spurious correlation is epistemic luck, vulnerable to slight adversarial perturbation.",
+      "coreAxiomCode": "Knowledge ≠ Belief ∧ Truth (Gettier Counterexample)",
+      "intervalDays": 3,
+      "reviewCount": 2,
+      "isPinned": false,
+      "easeFactor": 2.6,
+      "masteryPercent": 55
+    }
+  ],
+  "sources": [
+    {
+      "id": "src-1",
+      "workbookId": "epistemology-ai",
+      "name": "Lec03_Tape.mp3",
+      "type": "audio",
+      "icon": "graphic_eq",
+      "metadataTag": "Indexed (18:42)",
+      "size": "24.8 MB",
+      "uploadDate": "Sep 12, 2026",
+      "excerpt": "Seminar recording by Prof. Vance on inductive alignment, Humean custom, and empirical confidence in stochastic sampling.",
+      "details": "Recorded during Morning Colloquium in Cambridge Hall. Audio indexed with time markers at 18:42 and 24:15."
+    },
+    {
+      "id": "src-2",
+      "workbookId": "epistemology-ai",
+      "name": "Russell_Problems.pdf",
+      "type": "pdf",
+      "icon": "picture_as_pdf",
+      "metadataTag": "Ch. 6 §2 parsed",
+      "size": "3.4 MB",
+      "uploadDate": "Sep 10, 2026",
+      "excerpt": "Bertrand Russell, The Problems of Philosophy (1912), Chapter VI: On Induction and the Turkey Paradox.",
+      "details": "Full OCR extraction of Chapter 6 with semantic cross-references to Hume’s Treatise of Human Nature."
+    },
+    {
+      "id": "src-3",
+      "workbookId": "epistemology-ai",
+      "name": "Handout_Annotated.png",
+      "type": "image",
+      "icon": "image",
+      "metadataTag": "OCR Synced",
+      "size": "1.2 MB",
+      "uploadDate": "Sep 11, 2026",
+      "excerpt": "Annotated diagram comparing empirical loss minimizers with Hume’s critique of causal necessity.",
+      "details": "Scanned manuscript with handwritten margin notes on inductive boundaries and telemetry traps."
+    }
+  ],
+  "chatHistory": [
+    {
+      "id": "msg-1",
+      "role": "model",
+      "content": "In Lec03 Tape (18:42), Prof. Vance cautions that over-prompting with stylistic examples causes models to prioritize superficial rhyme over logical coherence. This directly explains the Turkey Paradox card: high benchmark scores reflect habituation to prompt contours, not actual causal reasoning.",
+      "timestamp": "Just now",
+      "sourceRef": "Cross-ref: Russell Ch. 6, Page 63",
+      "actionType": "socratic"
+    }
+  ],
+  "preferences": {
+    "retentionRate": 94.2,
+    "activeDeskMode": "arranged",
+    "lastActiveWorkbookId": "epistemology-ai"
+  },
+  "userProfile": {
+    "id": "scholar-01",
+    "name": "Dr. Aaron Vance",
+    "email": "a.vance@scholar-codex.org",
+    "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80",
+    "role": "Chair of Epistemology & Formal Semantics",
+    "institution": "Department of Cognitive Logic",
+    "retentionRate": 94.2,
+    "epistemicStability": 89.6,
+    "totalNotes": 48,
+    "totalCardsMastered": 132
+  }
+}
