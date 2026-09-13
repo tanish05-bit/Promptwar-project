@@ -28,6 +28,7 @@ import { ImageToWebModal } from './components/ImageToWebModal';
 import { ExportProjectModal } from './components/ExportProjectModal';
 import { AssetManagerModal } from './components/AssetManagerModal';
 import { CloudAndAISettingsModal } from './components/CloudAndAISettingsModal';
+import { DraggableStickyNote, StickyNoteItem } from './components/DraggableStickyNote';
 
 export default function App() {
   // State management
@@ -38,6 +39,38 @@ export default function App() {
   const [cards, setCards] = useState<StudyCard[]>([]);
   const [activeCardIndex, setActiveCardIndex] = useState<number>(0);
   const [sources, setSources] = useState<SourceMedia[]>([]);
+
+  // Draggable Sticky Notes State
+  const [stickyNotes, setStickyNotes] = useState<StickyNoteItem[]>([
+    {
+      id: 'sticky-1',
+      title: 'Epistemic Axiom',
+      text: 'Induction cannot establish necessity: past repetition ≠ future law.',
+      x: 140,
+      y: 190,
+      color: 'gold',
+      isMinimized: false,
+    },
+  ]);
+
+  const handleAddStickyNote = () => {
+    const newId = `sticky-${Date.now()}`;
+    const colors: Array<StickyNoteItem['color']> = ['gold', 'amber', 'emerald', 'rose', 'indigo'];
+    const nextColor = colors[stickyNotes.length % colors.length];
+    setStickyNotes((prev) => [
+      ...prev,
+      {
+        id: newId,
+        title: `Sticky Note #${prev.length + 1}`,
+        text: '',
+        x: Math.min(window.innerWidth - 300, 220 + (prev.length * 25) % 250),
+        y: Math.min(window.innerHeight - 300, 180 + (prev.length * 25) % 200),
+        color: nextColor,
+        isMinimized: false,
+      },
+    ]);
+    showToast('Draggable sticky note added');
+  };
   const [geminiMessages, setGeminiMessages] = useState<GeminiMessage[]>([]);
   const [preferences, setPreferences] = useState<ScholarPreferences>({
     theme: 'dark',
@@ -539,6 +572,7 @@ export default function App() {
                 onOpenAIPromptNote={() => setIsAIPromptModalOpen(true)}
                 onOpenLiveTranscriber={() => setIsLiveTranscriberOpen(true)}
                 onOpenCloudSettings={() => setIsCloudSettingsOpen(true)}
+                onAddStickyNote={handleAddStickyNote}
               />
 
               {/* Toggle: Website Studio vs Manuscript Desk */}
@@ -593,6 +627,8 @@ export default function App() {
                           setIsSourceModalOpen(true);
                         }}
                         isGeneratingCard={isGeneratingCard}
+                        onNoteCreated={handleNoteCreated}
+                        onAddStickyNote={handleAddStickyNote}
                       />
                     ) : (
                       <div className="p-8 bg-[#1b1b1d] rounded-xl text-center text-[#dbc1b4]">
@@ -721,6 +757,18 @@ export default function App() {
         onClose={() => setIsCloudSettingsOpen(false)}
         activeProject={activeProject}
       />
+
+      {/* Draggable Sticky Notes Workspace Overlay */}
+      {stickyNotes.map((sn) => (
+        <DraggableStickyNote
+          key={sn.id}
+          note={sn}
+          onUpdate={(id, updates) =>
+            setStickyNotes((prev) => prev.map((item) => (item.id === id ? { ...item, ...updates } : item)))
+          }
+          onDelete={(id) => setStickyNotes((prev) => prev.filter((item) => item.id !== id))}
+        />
+      ))}
     </div>
   );
 }

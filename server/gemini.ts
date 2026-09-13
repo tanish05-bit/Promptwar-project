@@ -935,6 +935,112 @@ function applyFallbackPromptEdit(
   };
 }
 
+// ==========================================
+// 8. Summarize Any Text Block
+// ==========================================
+export async function summarizeText(
+  text: string
+): Promise<{ summary: string; model: string }> {
+  return await callWithFailover(
+    async (ai) => {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `Summarize the following text concisely and clearly. Preserve key arguments, named concepts, and critical conclusions. Format in clean markdown with bullet points for key takeaways.\n\nTEXT TO SUMMARIZE:\n"""\n${text}\n"""`,
+        config: {
+          systemInstruction: 'You are an expert academic summarizer. Produce a structured summary with: 1) A 2-3 sentence overview, 2) Key points as bullet list, 3) One-sentence conclusion.',
+          temperature: 0.3,
+        },
+      });
+      return {
+        summary: response.text || 'Summary could not be generated.',
+        model: 'gemini-2.5-flash',
+      };
+    },
+    () => ({
+      summary: `**Summary of provided text:**\n\n${text.slice(0, 200)}...\n\n*Key Points:*\n- Core concept identified from selection\n- Epistemic constraints apply\n- Further analysis required\n\n*Conclusion:* The text presents a foundational argument warranting deeper study.`,
+      model: 'scholar-offline-summarizer',
+    })
+  );
+}
+
+// ==========================================
+// 9. Generate Mock Quiz from Text
+// ==========================================
+export interface QuizQuestion {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+}
+
+export async function generateMockQuiz(
+  text: string,
+  numQuestions: number = 5
+): Promise<{ questions: QuizQuestion[]; model: string }> {
+  const clampedNum = Math.min(Math.max(numQuestions, 2), 10);
+
+  return await callWithFailover(
+    async (ai) => {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `Generate ${clampedNum} multiple-choice quiz questions based on the following text. Each question must have exactly 4 options (A, B, C, D) and a clear correct answer with a brief explanation.\n\nSOURCE TEXT:\n"""\n${text.slice(0, 4000)}\n"""`,
+        config: {
+          systemInstruction: 'You are an expert academic quiz generator. Create challenging but fair multiple-choice questions that test deep understanding, not just surface recall. Always return valid JSON.',
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              questions: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    question: { type: Type.STRING },
+                    options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    correctIndex: { type: Type.NUMBER },
+                    explanation: { type: Type.STRING },
+                  },
+                  required: ['question', 'options', 'correctIndex', 'explanation'],
+                },
+              },
+            },
+            required: ['questions'],
+          },
+          temperature: 0.6,
+        },
+      });
+
+      const parsed = JSON.parse(response.text || '{"questions":[]}');
+      return {
+        questions: Array.isArray(parsed.questions) ? parsed.questions : [],
+        model: 'gemini-2.5-flash',
+      };
+    },
+    () => ({
+      questions: [
+        {
+          question: 'What is the main argument presented in the selected text?',
+          options: [
+            'Statistical models guarantee epistemic truth',
+            'Inductive reasoning alone cannot ensure alignment or safety',
+            'Reward functions fully capture human values',
+            'Past performance guarantees future reliability',
+          ],
+          correctIndex: 1,
+          explanation: 'The text argues that inductive patterns (like RLHF rewards) cannot logically guarantee behavior outside the training distribution — a core epistemological problem.',
+        },
+        {
+          question: 'Which philosophical figure is most relevant to the induction problem described?',
+          options: ['Kant', 'Hume', 'Aristotle', 'Descartes'],
+          correctIndex: 1,
+          explanation: 'David Hume\'s problem of induction — that past observations cannot justify future predictions — is the foundational epistemological issue at stake.',
+        },
+      ],
+      model: 'scholar-offline-quiz',
+    })
+  );
+}
+
 export function setGeminiApiKey(key: string) {
   keyManager.setRuntimeApiKey(key);
 }

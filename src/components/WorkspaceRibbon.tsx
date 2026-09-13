@@ -16,6 +16,7 @@ interface WorkspaceRibbonProps {
   onOpenLiveTranscriber?: () => void;
   onOpenCloudSettings?: () => void;
   isRecording?: boolean;
+  onAddStickyNote?: () => void;
 }
 
 export const WorkspaceRibbon: React.FC<WorkspaceRibbonProps> = ({
@@ -33,6 +34,7 @@ export const WorkspaceRibbon: React.FC<WorkspaceRibbonProps> = ({
   onOpenLiveTranscriber,
   onOpenCloudSettings,
   isRecording,
+  onAddStickyNote,
 }) => {
   return (
     <div className="w-full bg-[#1b1b1d] rounded-xl px-4 py-3 mb-4 shadow-md border border-[#2a2a2c]/50">
@@ -202,6 +204,18 @@ export const WorkspaceRibbon: React.FC<WorkspaceRibbonProps> = ({
             >
               <span className="material-symbols-outlined text-[16px]">psychology</span>
               <span>+ AI Note</span>
+            </button>
+          )}
+
+          {/* Draggable Sticky Note Trigger */}
+          {onAddStickyNote && (
+            <button
+              onClick={onAddStickyNote}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-label-md bg-[#242426] text-[#ffb68c] hover:bg-[#353437] border border-[#ffb68c]/30 transition-all shadow-sm"
+              title="Add a draggable sticky note onto your workspace"
+            >
+              <span className="material-symbols-outlined text-[16px] text-[#ffb68c]">sticky_note_2</span>
+              <span>+ Sticky Note</span>
             </button>
           )}
 

@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
@@ -15,14 +15,46 @@ import {
   generateWebsiteFromImage,
   regenerateWebsiteSection,
   editWebsiteWithPrompt,
+  summarizeText,
+  generateMockQuiz,
   keyManager,
 } from './server/gemini';
 
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
-// CORS configuration for robust decoupled API operations
+// ==========================================
+// SECURITY MIDDLEWARE
+// ==========================================
+
+// In-memory rate limiter (no extra packages needed)
+const _rateCounts = new Map<string, { count: number; resetAt: number }>();
+function rateLimiter(max: number, windowMs: number) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const ip = (req.ip || req.socket?.remoteAddress || 'unknown').replace(/^::ffff:/, '');
+    const now = Date.now();
+    const rec = _rateCounts.get(ip);
+    if (!rec || now > rec.resetAt) {
+      _rateCounts.set(ip, { count: 1, resetAt: now + windowMs });
+      return next();
+    }
+    rec.count++;
+    if (rec.count > max) return res.status(429).json({ error: 'Too many requests — slow down.' });
+    next();
+  };
+}
+
+// Security headers
+app.use((_req: Request, res: Response, next: NextFunction) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
+// CORS
 app.use(
   cors({
     origin: true,
@@ -32,9 +64,14 @@ app.use(
   })
 );
 
-// Body parsing with generous limit for audio and document payloads
+// Body parsing
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Rate limits
+app.use('/api/', rateLimiter(150, 60_000));       // 150 req/min general
+app.use('/api/gemini/', rateLimiter(25, 60_000)); // 25 req/min AI
+app.use('/api/ai/', rateLimiter(25, 60_000));
 
 // Health Check API
 app.get('/api/health', (_req: Request, res: Response) => {
@@ -246,13 +283,16 @@ app.get('/api/sources', (req: Request, res: Response) => {
 });
 
 app.post('/api/upload', (req: Request, res: Response) => {
-  const { workbookId, name, type, size, excerpt, details } = req.body;
-  if (!name) {
-    return res.status(400).json({ error: 'File name is required' });
-  }
+  const { workbookId, name, type, size, excerpt, details, fileBase64, mimeType, textContent } = req.body;
+  if (!name) return res.status(400).json({ error: 'File name is required' });
 
-  const effectiveType = type || (name.endsWith('.mp3') || name.endsWith('.wav') || name.endsWith('.webm') ? 'audio' : name.endsWith('.png') || name.endsWith('.jpg') ? 'image' : 'pdf');
-  const icon = effectiveType === 'audio' ? 'graphic_eq' : effectiveType === 'image' ? 'image' : 'picture_as_pdf';
+  const effectiveType: 'audio' | 'pdf' | 'image' | 'text' =
+    type ||
+    (name.match(/\.(mp3|wav|webm|ogg|m4a)$/i) ? 'audio' :
+     name.match(/\.(png|jpg|jpeg|gif|webp|svg)$/i) ? 'image' :
+     name.match(/\.pdf$/i) ? 'pdf' : 'text');
+
+  const icon = effectiveType === 'audio' ? 'graphic_eq' : effectiveType === 'image' ? 'image' : effectiveType === 'pdf' ? 'picture_as_pdf' : 'description';
 
   const newSource = db.addSource({
     workbookId: workbookId || 'epistemology-ai',
@@ -260,16 +300,65 @@ app.post('/api/upload', (req: Request, res: Response) => {
     type: effectiveType,
     icon,
     metadataTag: `Indexed (${size || 'Uploaded'})`,
-    size: size || '1.2 MB',
+    size: size || '—',
     uploadDate: 'Today',
-    excerpt: excerpt || 'Uploaded archival media document.',
-    details: details || `Attached via Scholar Upload Portal at ${new Date().toLocaleTimeString()}`,
+    excerpt: excerpt || (textContent ? textContent.slice(0, 200) : 'Uploaded file.'),
+    details: details || `Attached at ${new Date().toLocaleTimeString()}`,
   });
 
   res.status(201).json({
     success: true,
     source: newSource,
     message: `File "${name}" uploaded and indexed into the codex archive.`,
+  });
+});
+
+// ── IMPORT TEXT/MARKDOWN/CODE FILE AS A NOTE ──────────────────
+app.post('/api/import/text-file', (req: Request, res: Response) => {
+  const { workbookId, filename, content, mimeType } = req.body;
+  if (!content || typeof content !== 'string') {
+    return res.status(400).json({ error: 'content (string) is required' });
+  }
+
+  const rawTitle = (filename || 'Imported File')
+    .replace(/\.[^/.]+$/, '')
+    .replace(/[-_]+/g, ' ')
+    .trim();
+
+  const isMarkdown = (filename || '').match(/\.(md|markdown)$/i) ||
+    mimeType === 'text/markdown';
+
+  const newNote = db.createNote({
+    workbookId: workbookId || 'epistemology-ai',
+    title: rawTitle || `Import — ${new Date().toLocaleTimeString()}`,
+    content,
+    chapter: 'IMPORTED DOCUMENTS',
+    chapterNumber: '§ IMP',
+    noteType: 'text note',
+    generatedPrompt: '',
+    tags: ['Imported', isMarkdown ? 'Markdown' : 'Text File'],
+    scholarAnnotation: {
+      reference: `File Import — ${filename || 'unknown'}`,
+      text: `Imported on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`,
+    },
+  });
+
+  // Index as a source too
+  db.addSource({
+    workbookId: workbookId || 'epistemology-ai',
+    name: filename || `${rawTitle}.txt`,
+    type: 'text',
+    icon: isMarkdown ? 'description' : 'text_snippet',
+    metadataTag: `Imported (${Math.round(content.length / 1024 * 10) / 10} KB)`,
+    size: `${Math.round(content.length / 1024 * 10) / 10} KB`,
+    uploadDate: 'Today',
+    excerpt: content.slice(0, 200),
+    details: `Imported from file at ${new Date().toLocaleTimeString()}`,
+  });
+
+  res.status(201).json({
+    note: newNote,
+    message: `Imported "${rawTitle}" as a new note successfully.`,
   });
 });
 
@@ -462,42 +551,88 @@ app.post('/api/gemini/chat', async (req: Request, res: Response) => {
 });
 
 // D. Study Card Generation from Highlight
+// NOTE: Returns card DIRECTLY (not wrapped in {card:…}) so frontend `newCard.id` check works
 app.post('/api/gemini/generate-card', async (req: Request, res: Response) => {
   const { textSelection, noteTitle, workbookId, noteId } = req.body;
   if (!textSelection) {
     return res.status(400).json({ error: 'textSelection is required' });
   }
 
-  const generated = await generateStudyCardFromSelection(
-    textSelection,
-    noteTitle || 'Manuscript Note'
-  );
+  try {
+    const generated = await generateStudyCardFromSelection(
+      textSelection,
+      noteTitle || 'Manuscript Note'
+    );
 
-  const newCard = db.createCard({
-    workbookId: workbookId || 'epistemology-ai',
-    noteId,
-    title: generated.title,
-    question: generated.question,
-    conceptBadge: generated.conceptBadge,
-    backTitle: generated.backTitle,
-    backAnswer: generated.backAnswer,
-    pedagogicalAxiom: generated.pedagogicalAxiom,
-    coreAxiomCode: generated.coreAxiomCode,
-    groundingSource: generated.groundingSource,
-    quoteRef: generated.quoteRef,
-  });
+    const newCard = db.createCard({
+      workbookId: workbookId || 'epistemology-ai',
+      noteId,
+      title: generated.title,
+      question: generated.question,
+      conceptBadge: generated.conceptBadge,
+      backTitle: generated.backTitle,
+      backAnswer: generated.backAnswer,
+      pedagogicalAxiom: generated.pedagogicalAxiom,
+      coreAxiomCode: generated.coreAxiomCode,
+      groundingSource: generated.groundingSource,
+      quoteRef: generated.quoteRef,
+    });
 
-  // Also log in dialectic chat
-  db.addChatMessage({
-    role: 'model',
-    content: `Synthesized new Activity Study Card #${newCard.cardNumber}: "${newCard.title}". Grounded in: "${textSelection.slice(0, 60)}..."`,
-    actionType: 'card_created',
-  });
+    db.addChatMessage({
+      role: 'model',
+      content: `Synthesized new Activity Study Card #${newCard.cardNumber}: "${newCard.title}". Grounded in: "${textSelection.slice(0, 60)}..."`,
+      actionType: 'card_created',
+    });
 
-  res.status(201).json({
-    card: newCard,
-    quotaStatus: keyManager.getStatus(),
-  });
+    // Return the card object directly — frontend checks `newCard.id`
+    res.status(201).json(newCard);
+  } catch (err: any) {
+    console.error('[generate-card] Error:', err);
+    res.status(500).json({ error: 'Card generation failed', details: err?.message });
+  }
+});
+
+// E. Summarize Note / Selected Text
+app.post('/api/ai/summarize', async (req: Request, res: Response) => {
+  const { text, workbookId, saveAsNote, noteTitle } = req.body;
+  if (!text || typeof text !== 'string' || text.trim().length < 10) {
+    return res.status(400).json({ error: 'text is required (min 10 chars)' });
+  }
+  try {
+    const result = await summarizeText(text);
+    let savedNote = null;
+    if (saveAsNote) {
+      savedNote = db.createNote({
+        workbookId: workbookId || 'epistemology-ai',
+        title: noteTitle || `Summary: ${text.slice(0, 40).trim()}...`,
+        content: result.summary,
+        chapter: 'AI SUMMARIES',
+        chapterNumber: '§ SUM',
+        noteType: 'AI-generated content',
+        generatedPrompt: 'Summarize',
+        tags: ['Summary', 'AI-Generated'],
+      });
+    }
+    res.json({ summary: result.summary, model: result.model, savedNote, quotaStatus: keyManager.getStatus() });
+  } catch (err: any) {
+    console.error('[summarize] Error:', err);
+    res.status(500).json({ error: 'Summarize failed', details: err?.message });
+  }
+});
+
+// F. Generate Mock Quiz from Text
+app.post('/api/ai/quiz', async (req: Request, res: Response) => {
+  const { text, numQuestions, workbookId } = req.body;
+  if (!text || typeof text !== 'string' || text.trim().length < 20) {
+    return res.status(400).json({ error: 'text is required (min 20 chars)' });
+  }
+  try {
+    const result = await generateMockQuiz(text, numQuestions || 5);
+    res.json({ questions: result.questions, model: result.model, quotaStatus: keyManager.getStatus() });
+  } catch (err: any) {
+    console.error('[quiz] Error:', err);
+    res.status(500).json({ error: 'Quiz generation failed', details: err?.message });
+  }
 });
 
 // E. Quota & Key Switching Status
@@ -672,6 +807,41 @@ app.post('/api/ai/edit-website', async (req: Request, res: Response) => {
       error: 'Failed to edit website with prompt',
       details: err?.message || 'Server error',
     });
+  }
+});
+
+// ── EXPORT NOTES AS ZIP ────────────────────────────────────
+app.get('/api/export/notes-zip', async (req: Request, res: Response) => {
+  const workbookId = (req.query.workbookId as string) || 'epistemology-ai';
+  try {
+    const zip = new JSZip();
+    const notes = db.getNotes(workbookId);
+    const cards = db.getCards(workbookId);
+    const wb = db.getWorkbookById(workbookId);
+    const folder = zip.folder(wb?.slug || 'codex-export')!;
+
+    notes.forEach((n, i) => {
+      const safeName = `${String(i + 1).padStart(2, '0')}_${n.title.replace(/[^a-z0-9]/gi, '_').slice(0, 40)}.md`;
+      let md = `# ${n.title}\n_${n.chapter}_\n\n${n.content}\n`;
+      if (n.scholarAnnotation) md += `\n> **Annotation (${n.scholarAnnotation.reference}):** ${n.scholarAnnotation.text}\n`;
+      folder.file(safeName, md);
+    });
+
+    if (cards.length > 0) {
+      let cardsMd = `# Study Cards — ${wb?.name || 'Codex'}\n\n`;
+      cards.forEach((c, i) => {
+        cardsMd += `## Card ${i + 1}: ${c.title}\n**Q:** ${c.question}\n**A:** ${c.backAnswer}\n\n`;
+      });
+      folder.file('_study_cards.md', cardsMd);
+    }
+
+    const content = await zip.generateAsync({ type: 'nodebuffer' });
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${wb?.slug || 'codex'}-notes.zip"`);
+    res.send(content);
+  } catch (err: any) {
+    console.error('[notes-zip] Error:', err);
+    res.status(500).json({ error: 'Failed to create notes ZIP' });
   }
 });
 
@@ -856,5 +1026,13 @@ async function startServer() {
     console.log(`Scholar Codex full-stack server running on http://0.0.0.0:${PORT}`);
   });
 }
+
+// ==========================================
+// GLOBAL ERROR HANDLER
+// ==========================================
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('[Unhandled Error]', err.message);
+  res.status(500).json({ error: 'Internal server error', details: err.message });
+});
 
 startServer();
