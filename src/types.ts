@@ -117,10 +117,76 @@ export interface ScholarPreferences {
   highYieldOnly: boolean;
 }
 
+export interface DesignSettings {
+  primaryColor: string;
+  backgroundColor: string;
+  surfaceColor: string;
+  textColor: string;
+  accentColor: string;
+  fontFamily: string;
+  baseFontSize: number;
+  borderRadius: number;
+  spacingUnit: number;
+  boxShadow: string;
+  containerMaxWidth: number;
+}
+
+export interface ProjectAsset {
+  id: string;
+  name: string;
+  url: string;
+  type: 'image' | 'icon' | 'font';
+  size?: string;
+  associatedSection?: string;
+  createdAt: string;
+}
+
+export interface WebsiteProject {
+  id: string;
+  workbookId: string;
+  title: string;
+  description?: string;
+  html: string;
+  css: string;
+  js: string;
+  designSettings: DesignSettings;
+  assets: ProjectAsset[];
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+}
+
+export type PreviewDevice = 'desktop' | 'tablet' | 'mobile' | 'responsive';
+export type CodeEditorTab = 'html' | 'css' | 'js';
+export type AppWorkspaceMode = 'desk' | 'website-studio';
+
+export interface SelectedSection {
+  tag: string;
+  selector: string;
+  outerHtml: string;
+  textContent: string;
+  boundingBox?: {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  };
+}
+
+export interface HistoryState {
+  html: string;
+  css: string;
+  js: string;
+  designSettings: DesignSettings;
+  description: string;
+}
+
 export interface AppState {
   currentWorkbookId: string;
   currentNoteId: string;
   activeCardIndex: number;
   viewMode: ViewLayoutMode;
+  workspaceMode: AppWorkspaceMode;
   mobileTab: MobileTab;
 }
+

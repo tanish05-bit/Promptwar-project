@@ -1,6 +1,17 @@
 import fs from 'fs';
 import path from 'path';
-import { Workbook, Note, StudyCard, SourceMedia, GeminiMessage, VoiceNote, UserProfile } from '../src/types';
+import {
+  Workbook,
+  Note,
+  StudyCard,
+  SourceMedia,
+  GeminiMessage,
+  VoiceNote,
+  UserProfile,
+  WebsiteProject,
+  ProjectAsset,
+  DesignSettings,
+} from '../src/types';
 
 interface DatabaseSchema {
   workbooks: Workbook[];
@@ -9,12 +20,15 @@ interface DatabaseSchema {
   sources: SourceMedia[];
   chatHistory: GeminiMessage[];
   userProfile: UserProfile;
+  websiteProjects: WebsiteProject[];
+  assets: ProjectAsset[];
   preferences: {
     retentionRate: number;
     activeDeskMode: string;
     lastActiveWorkbookId: string;
   };
 }
+
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'scholar_codex.json');
@@ -318,6 +332,837 @@ In modern frontier prompt architecture, benchmark saturation presents an analogo
     totalNotes: 48,
     totalCardsMastered: 132
   },
+  websiteProjects: [
+    {
+      id: 'proj-codex-hub',
+      workbookId: 'epistemology-ai',
+      title: 'Scholar Codex — Dialectic & Research Portal',
+      description: 'Production responsive research portal featuring epistemic study cards, audio archives, and interactive dialectic exploration.',
+      version: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      designSettings: {
+        primaryColor: '#ffb68c',
+        backgroundColor: '#131315',
+        surfaceColor: '#1e1e22',
+        textColor: '#f0ede6',
+        accentColor: '#8ed5b4',
+        fontFamily: 'Be Vietnam Pro',
+        baseFontSize: 16,
+        borderRadius: 8,
+        spacingUnit: 16,
+        boxShadow: '0 8px 30px rgba(0, 0, 0, 0.4)',
+        containerMaxWidth: 1200,
+      },
+      assets: [
+        {
+          id: 'asset-hero-1',
+          name: 'Scholar Codex Emblem',
+          url: 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=800&auto=format&fit=crop&q=80',
+          type: 'image',
+          size: '240 KB',
+          associatedSection: 'hero',
+          createdAt: new Date().toISOString(),
+        }
+      ],
+      html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scholar Codex — Epistemic Research Portal</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400&family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+</head>
+<body>
+  <!-- Navigation Header -->
+  <header class="site-header" id="navbar">
+    <div class="nav-container">
+      <a href="#hero" class="brand-logo">
+        <span class="logo-badge">§</span>
+        <span class="logo-text">Scholar Codex</span>
+      </a>
+      <nav class="nav-menu" id="navMenu">
+        <a href="#features" class="nav-link active">Chapters</a>
+        <a href="#dialectic" class="nav-link">Dialectic</a>
+        <a href="#study-stack" class="nav-link">Study Stack</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="btn btn-secondary" id="modeToggleBtn">Toggle Theme</button>
+        <button class="btn btn-primary" id="launchBtn">Launch Studio</button>
+      </div>
+      <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle navigation">☰</button>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section" id="hero">
+    <div class="hero-container">
+      <div class="hero-badge">
+        <span class="pulse-dot"></span>
+        <span>ARCHIVAL STUDY DESK v4.2</span>
+      </div>
+      <h1 class="hero-title">Synthesize Deep Knowledge into <span class="highlight">Interactive Epistemic Apps</span></h1>
+      <p class="hero-lead">Transform unstructured scholarly manuscripts, audio colloquia, and visual prototypes into production-grade websites and dialectic study workspaces.</p>
+      <div class="hero-buttons">
+        <a href="#dialectic" class="btn btn-primary btn-lg">Explore Dialectic Engine</a>
+        <a href="#features" class="btn btn-outline btn-lg">View Curated Chapters</a>
+      </div>
+      <div class="hero-metrics">
+        <div class="metric-card">
+          <span class="metric-value">94.2%</span>
+          <span class="metric-label">Retention Index</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-value">12+</span>
+          <span class="metric-label">Codex Chapters</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-value">Zero-Shot</span>
+          <span class="metric-label">Alignment Verification</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Curated Features Grid -->
+  <section class="features-section" id="features">
+    <div class="section-container">
+      <div class="section-header text-center">
+        <h2 class="section-title">Core Archival Modules</h2>
+        <p class="section-subtitle">Disciplined physical study metaphors translated into high-performance web tooling.</p>
+      </div>
+      <div class="cards-grid">
+        <div class="feature-card" data-card="1">
+          <div class="card-icon">📖</div>
+          <span class="card-tag">Chapter § 03.4</span>
+          <h3 class="card-title">Humean Custom & Induction</h3>
+          <p class="card-desc">Critiques of modern RLHF reward shaping through the philosophical lens of inductive habit.</p>
+          <div class="card-footer">
+            <span class="card-status status-mastered">Mastered (95%)</span>
+            <button class="card-action-btn">Study</button>
+          </div>
+        </div>
+        <div class="feature-card" data-card="2">
+          <div class="card-icon">🎙️</div>
+          <span class="card-tag">Acoustic Codex</span>
+          <h3 class="card-title">Seminar Audio Colloquia</h3>
+          <p class="card-desc">Lossless voice memo recording, real-time waveform inspection, and automated transcription synthesis.</p>
+          <div class="card-footer">
+            <span class="card-status status-review">In Review</span>
+            <button class="card-action-btn">Listen</button>
+          </div>
+        </div>
+        <div class="feature-card" data-card="3">
+          <div class="card-icon">⚡</div>
+          <span class="card-tag">AI Vision Bridge</span>
+          <h3 class="card-title">Image-to-Website Engine</h3>
+          <p class="card-desc">Convert hand-drawn wireframes and digital screenshots directly into responsive semantic HTML & CSS.</p>
+          <div class="card-footer">
+            <span class="card-status status-ready">Active Pipeline</span>
+            <button class="card-action-btn">Convert</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Dialectic Sandbox -->
+  <section class="dialectic-section" id="dialectic">
+    <div class="section-container">
+      <div class="dialectic-box">
+        <div class="dialectic-header">
+          <div>
+            <h2 class="section-title">Dialectic Inquiry Terminal</h2>
+            <p class="section-subtitle">Test epistemic counter-arguments against the grounded codex archive.</p>
+          </div>
+          <span class="status-badge">Grounding: 4 Sources</span>
+        </div>
+        <div class="dialectic-interactive">
+          <div class="input-group">
+            <input type="text" id="hypothesisInput" placeholder="Enter a philosophical prompt or hypothesis (e.g., Is RLHF merely empirical habit?)..." class="text-input">
+            <button id="inquireBtn" class="btn btn-primary">Interrogate</button>
+          </div>
+          <div id="dialecticResponse" class="response-card hidden">
+            <div class="response-header">
+              <span class="scholar-badge">Socratic Grounding Engine</span>
+              <span class="timestamp" id="responseTimestamp">Just now</span>
+            </div>
+            <p id="responseText" class="response-body"></p>
+            <div class="citation-tag" id="responseCitation">Citation: Hume Treatise I.III.VI · Russell '12 Ch.6 §2</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <span class="logo-badge">§</span>
+        <span>Scholar Codex — Faculty of Epistemology</span>
+      </div>
+      <p class="footer-copy">Built for rigorous researchers, competitive prompt engineers, and archival codex curators.</p>
+      <div class="footer-links">
+        <a href="#hero">Top</a>
+        <a href="#features">Chapters</a>
+        <a href="#dialectic">Dialectic</a>
+        <a href="https://github.com" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>`,
+      css: `:root {
+  --primary: #ffb68c;
+  --primary-hover: #e5a968;
+  --bg-color: #131315;
+  --surface-1: #1e1e22;
+  --surface-2: #26252b;
+  --text-main: #f0ede6;
+  --text-muted: #a39e93;
+  --accent: #8ed5b4;
+  --border-color: #2e2d35;
+  --font-body: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Literata', Georgia, serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius: 8px;
+  --transition: all 0.2s ease-in-out;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  font-size: 16px;
+  overflow-x: hidden;
+}
+
+/* Header & Navigation */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: rgba(19, 19, 21, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.85rem 0;
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: var(--text-main);
+  font-weight: 700;
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
+}
+
+.logo-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background-color: var(--surface-2);
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  border-radius: 4px;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.nav-link {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.nav-link:hover, .nav-link.active {
+  color: var(--primary);
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.mobile-toggle {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  font-size: 1.25rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1.1rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition);
+  border: 1px solid transparent;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: #131315;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: var(--surface-2);
+  color: var(--text-main);
+  border-color: var(--border-color);
+}
+
+.btn-secondary:hover {
+  background-color: #353437;
+  border-color: var(--text-muted);
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--text-main);
+  border-color: var(--border-color);
+}
+
+.btn-outline:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-lg {
+  padding: 0.8rem 1.6rem;
+  font-size: 1rem;
+}
+
+/* Hero Section */
+.hero-section {
+  padding: 5rem 1.5rem 4rem;
+  background: radial-gradient(circle at 50% 20%, rgba(217, 119, 54, 0.12) 0%, rgba(19, 19, 21, 0) 70%);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.hero-container {
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 9999px;
+  background-color: var(--surface-1);
+  border: 1px solid var(--border-color);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--primary);
+  letter-spacing: 0.05em;
+  margin-bottom: 1.5rem;
+}
+
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  background-color: var(--accent);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.hero-title {
+  font-family: var(--font-serif);
+  font-size: 3rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.hero-title .highlight {
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 182, 140, 0.4);
+}
+
+.hero-lead {
+  font-size: 1.15rem;
+  color: var(--text-muted);
+  max-width: 720px;
+  margin: 0 auto 2.25rem;
+  line-height: 1.7;
+}
+
+.hero-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 3.5rem;
+}
+
+.hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  border-top: 1px solid var(--border-color);
+  padding-top: 2.5rem;
+}
+
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.metric-value {
+  font-family: var(--font-mono);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.metric-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Features Grid */
+.features-section {
+  padding: 4.5rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.section-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header {
+  margin-bottom: 3rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.section-title {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 0.6rem;
+}
+
+.section-subtitle {
+  color: var(--text-muted);
+  font-size: 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.feature-card {
+  background-color: var(--surface-1);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 1.75rem;
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--primary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.card-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.card-tag {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+  display: inline-block;
+}
+
+.card-title {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.card-desc {
+  color: var(--text-muted);
+  font-size: 0.925rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  flex: 1;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+}
+
+.card-status {
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.status-mastered {
+  background: rgba(142, 213, 180, 0.15);
+  color: var(--accent);
+}
+
+.status-review {
+  background: rgba(249, 186, 120, 0.15);
+  color: #f9ba78;
+}
+
+.status-ready {
+  background: rgba(255, 182, 140, 0.15);
+  color: var(--primary);
+}
+
+.card-action-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.card-action-btn:hover {
+  background: var(--surface-2);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* Dialectic Interactive */
+.dialectic-section {
+  padding: 4.5rem 1.5rem;
+}
+
+.dialectic-box {
+  background-color: var(--surface-1);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 2.5rem;
+}
+
+.dialectic-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.status-badge {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-color);
+  padding: 0.3rem 0.75rem;
+  border-radius: 4px;
+  color: var(--primary);
+}
+
+.input-group {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.text-input {
+  flex: 1;
+  background-color: #131315;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-family: var(--font-body);
+  outline: none;
+  transition: var(--transition);
+}
+
+.text-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(255, 182, 140, 0.2);
+}
+
+.response-card {
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--primary);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+
+.response-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.scholar-badge {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--primary);
+  text-transform: uppercase;
+}
+
+.timestamp {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.response-body {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--text-main);
+  margin-bottom: 0.75rem;
+}
+
+.citation-tag {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+  font-family: var(--font-serif);
+}
+
+.hidden {
+  display: none;
+}
+
+/* Footer */
+.site-footer {
+  border-top: 1px solid var(--border-color);
+  padding: 2.5rem 1.5rem;
+  background-color: #0e0e10;
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.footer-copy {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.footer-links {
+  display: flex;
+  gap: 1rem;
+}
+
+.footer-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: var(--transition);
+}
+
+.footer-links a:hover {
+  color: var(--primary);
+}
+
+@media (max-width: 768px) {
+  .hero-title { font-size: 2.2rem; }
+  .hero-metrics { grid-template-columns: 1fr; gap: 1rem; }
+  .nav-menu, .nav-actions { display: none; }
+  .mobile-toggle { display: block; }
+  .input-group { flex-direction: column; }
+}
+`,
+      js: `document.addEventListener('DOMContentLoaded', () => {
+  const mobileToggle = document.getElementById('mobileToggle');
+  const navMenu = document.getElementById('navMenu');
+  const inquireBtn = document.getElementById('inquireBtn');
+  const hypothesisInput = document.getElementById('hypothesisInput');
+  const dialecticResponse = document.getElementById('dialecticResponse');
+  const responseText = document.getElementById('responseText');
+  const modeToggleBtn = document.getElementById('modeToggleBtn');
+  const launchBtn = document.getElementById('launchBtn');
+
+  if (mobileToggle) {
+    mobileToggle.addEventListener('click', () => {
+      if (navMenu.style.display === 'flex') {
+        navMenu.style.display = 'none';
+      } else {
+        navMenu.style.display = 'flex';
+        navMenu.style.flexDirection = 'column';
+        navMenu.style.position = 'absolute';
+        navMenu.style.top = '100%';
+        navMenu.style.left = '0';
+        navMenu.style.right = '0';
+        navMenu.style.background = '#1e1e22';
+        navMenu.style.padding = '1rem';
+        navMenu.style.borderBottom = '1px solid #2e2d35';
+      }
+    });
+  }
+
+  const dialecticAnswers = [
+    "Hume's Treatise of Human Nature demonstrates that inductive habits emerge from observed repetition, not epistemic certainty. In modern reward models, optimizing for compliance reproduces this telemetry trap: benchmark saturation reflects past feedback distributions rather than genuine deontic reasoning.",
+    "Russell's Turkey Paradox proves that 1,000 successive mornings of grain cannot guarantee safety on Thanksgiving morning. Zero-shot transfer into adversarial environments exposes the brittleness of purely statistical association.",
+    "Axiomatic alignment requires grounding beyond token frequencies: formal verification constraints, causal graphs, and epistemic margin guarantees that remain invariant under distribution shift."
+  ];
+
+  if (inquireBtn && hypothesisInput) {
+    inquireBtn.addEventListener('click', () => {
+      const query = hypothesisInput.value.trim();
+      if (!query) return;
+
+      inquireBtn.innerText = 'Interrogating...';
+      inquireBtn.disabled = true;
+
+      setTimeout(() => {
+        const randAnswer = dialecticAnswers[Math.floor(Math.random() * dialecticAnswers.length)];
+        if (responseText) responseText.innerText = randAnswer;
+        if (dialecticResponse) dialecticResponse.classList.remove('hidden');
+        inquireBtn.innerText = 'Interrogate';
+        inquireBtn.disabled = false;
+      }, 500);
+    });
+  }
+
+  let isLight = false;
+  if (modeToggleBtn) {
+    modeToggleBtn.addEventListener('click', () => {
+      isLight = !isLight;
+      if (isLight) {
+        document.documentElement.style.setProperty('--bg-color', '#f7f6f3');
+        document.documentElement.style.setProperty('--surface-1', '#ffffff');
+        document.documentElement.style.setProperty('--surface-2', '#eae8e3');
+        document.documentElement.style.setProperty('--text-main', '#1a1917');
+        document.documentElement.style.setProperty('--text-muted', '#68655e');
+        document.documentElement.style.setProperty('--border-color', '#d5d2cb');
+        modeToggleBtn.innerText = 'Dark Mode';
+      } else {
+        document.documentElement.style.setProperty('--bg-color', '#131315');
+        document.documentElement.style.setProperty('--surface-1', '#1e1e22');
+        document.documentElement.style.setProperty('--surface-2', '#26252b');
+        document.documentElement.style.setProperty('--text-main', '#f0ede6');
+        document.documentElement.style.setProperty('--text-muted', '#a39e93');
+        document.documentElement.style.setProperty('--border-color', '#2e2d35');
+        modeToggleBtn.innerText = 'Toggle Theme';
+      }
+    });
+  }
+
+  if (launchBtn) {
+    launchBtn.addEventListener('click', () => {
+      alert('Scholar Codex Studio is running live and interactive!');
+    });
+  }
+});
+`
+    }
+  ],
+  assets: [
+    {
+      id: 'asset-hero-1',
+      name: 'Scholar Codex Emblem',
+      url: 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=800&auto=format&fit=crop&q=80',
+      type: 'image',
+      size: '240 KB',
+      associatedSection: 'hero',
+      createdAt: new Date().toISOString(),
+    }
+  ],
   preferences: {
     retentionRate: 94.2,
     activeDeskMode: 'arranged',
@@ -344,6 +1189,12 @@ class Database {
         if (!parsed.userProfile) {
           parsed.userProfile = INITIAL_DATA.userProfile;
         }
+        if (!parsed.websiteProjects || parsed.websiteProjects.length === 0) {
+          parsed.websiteProjects = INITIAL_DATA.websiteProjects;
+        }
+        if (!parsed.assets) {
+          parsed.assets = INITIAL_DATA.assets;
+        }
         return parsed;
       }
     } catch (err) {
@@ -353,6 +1204,7 @@ class Database {
     this.saveData(INITIAL_DATA);
     return JSON.parse(JSON.stringify(INITIAL_DATA));
   }
+
 
   private saveData(dataToSave?: DatabaseSchema): void {
     try {
@@ -678,6 +1530,105 @@ class Database {
     this.saveData();
     return this.data.preferences;
   }
+
+  // ==========================================
+  // Website Projects Management
+  // ==========================================
+  getProjects(workbookId?: string): WebsiteProject[] {
+    if (workbookId) {
+      const filtered = this.data.websiteProjects.filter(p => p.workbookId === workbookId);
+      if (filtered.length > 0) return filtered;
+      // Fallback: return default project assigned to this workbook
+      const defaultProj = this.data.websiteProjects[0];
+      if (defaultProj) return [{ ...defaultProj, workbookId }];
+    }
+    return this.data.websiteProjects;
+  }
+
+  getProjectById(id: string): WebsiteProject | undefined {
+    return this.data.websiteProjects.find(p => p.id === id);
+  }
+
+  createProject(projectData: Omit<WebsiteProject, 'id' | 'createdAt' | 'updatedAt' | 'version'>): WebsiteProject {
+    const newProject: WebsiteProject = {
+      ...projectData,
+      id: `proj-${Date.now()}`,
+      version: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    this.data.websiteProjects.unshift(newProject);
+    this.saveData();
+    return newProject;
+  }
+
+  updateProject(id: string, updates: Partial<WebsiteProject>): WebsiteProject | undefined {
+    const index = this.data.websiteProjects.findIndex(p => p.id === id);
+    if (index === -1) {
+      // If updating default project under a different id, create or update first
+      if (this.data.websiteProjects.length > 0) {
+        this.data.websiteProjects[0] = {
+          ...this.data.websiteProjects[0],
+          ...updates,
+          version: (this.data.websiteProjects[0].version || 1) + 1,
+          updatedAt: new Date().toISOString(),
+        };
+        this.saveData();
+        return this.data.websiteProjects[0];
+      }
+      return undefined;
+    }
+
+    this.data.websiteProjects[index] = {
+      ...this.data.websiteProjects[index],
+      ...updates,
+      version: (this.data.websiteProjects[index].version || 1) + 1,
+      updatedAt: new Date().toISOString(),
+    };
+    this.saveData();
+    return this.data.websiteProjects[index];
+  }
+
+  deleteProject(id: string): boolean {
+    const initLen = this.data.websiteProjects.length;
+    this.data.websiteProjects = this.data.websiteProjects.filter(p => p.id !== id);
+    if (this.data.websiteProjects.length !== initLen) {
+      this.saveData();
+      return true;
+    }
+    return false;
+  }
+
+  // ==========================================
+  // Asset Management
+  // ==========================================
+  getAssets(): ProjectAsset[] {
+    return this.data.assets || [];
+  }
+
+  addAsset(asset: Omit<ProjectAsset, 'id' | 'createdAt'>): ProjectAsset {
+    const newAsset: ProjectAsset = {
+      ...asset,
+      id: `asset-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+    if (!this.data.assets) this.data.assets = [];
+    this.data.assets.unshift(newAsset);
+    this.saveData();
+    return newAsset;
+  }
+
+  deleteAsset(id: string): boolean {
+    if (!this.data.assets) return false;
+    const initLen = this.data.assets.length;
+    this.data.assets = this.data.assets.filter(a => a.id !== id);
+    if (this.data.assets.length !== initLen) {
+      this.saveData();
+      return true;
+    }
+    return false;
+  }
 }
 
 export const db = new Database();
+

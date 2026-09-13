@@ -6,13 +6,18 @@ import cors from 'cors';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { db } from './server/db';
+import JSZip from 'jszip';
 import {
   generateDialecticResponse,
   generateStudyCardFromSelection,
   generateAIContent,
   transcribeAudioFeed,
+  generateWebsiteFromImage,
+  regenerateWebsiteSection,
+  editWebsiteWithPrompt,
   keyManager,
 } from './server/gemini';
+
 
 const app = express();
 const PORT = 3000;
@@ -297,6 +302,28 @@ app.delete('/api/sources/:id', (req: Request, res: Response) => {
 // 6. AI SERVICE INTERACTIONS (GEMINI API)
 // ==========================================
 
+app.get('/api/ai/status', (_req: Request, res: Response) => {
+  res.json(keyManager.getStatus());
+});
+
+app.post('/api/ai/set-key', (req: Request, res: Response) => {
+  const { key } = req.body;
+  if (!key || typeof key !== 'string') {
+    return res.status(400).json({ error: 'API key is required' });
+  }
+  keyManager.setRuntimeApiKey(key);
+  res.json({ success: true, status: keyManager.getStatus() });
+});
+
+app.post('/api/ai/test', async (req: Request, res: Response) => {
+  try {
+    const testResult = await generateAIContent(req.body.prompt || 'Ping verification', undefined, 'Return a 1-sentence verification string.');
+    res.json({ success: true, text: testResult.text, model: testResult.model });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Gemini test failed' });
+  }
+});
+
 // A. General Prompt Endpoint returning AI-generated content & optionally storing as 'text note' or 'AI-generated content'
 app.post('/api/ai/generate-content', async (req: Request, res: Response) => {
   const { prompt, context, systemInstruction, autoSaveAsNote, noteType, workbookId, title } = req.body;
@@ -487,8 +514,251 @@ app.post('/api/ai/switch-key', (_req: Request, res: Response) => {
 });
 
 // ==========================================
-// 7. PREFERENCES & EXPORT DOSSIER
+// 7. WEBSITE STUDIO & AI CODE GENERATION
 // ==========================================
+
+// Projects CRUD
+app.get('/api/projects', (req: Request, res: Response) => {
+  const workbookId = req.query.workbookId as string | undefined;
+  res.json(db.getProjects(workbookId));
+});
+
+app.get('/api/projects/:id', (req: Request, res: Response) => {
+  const project = db.getProjectById(req.params.id);
+  if (!project) return res.status(404).json({ error: 'Project not found' });
+  res.json(project);
+});
+
+app.post('/api/projects', (req: Request, res: Response) => {
+  const { workbookId, title, description, html, css, js, designSettings, assets } = req.body;
+  if (!title) return res.status(400).json({ error: 'title is required' });
+  const created = db.createProject({
+    workbookId: workbookId || 'epistemology-ai',
+    title,
+    description: description || 'Generated web studio project.',
+    html: html || '<!DOCTYPE html><html><body><h1>New Project</h1></body></html>',
+    css: css || 'body { font-family: sans-serif; }',
+    js: js || '',
+    designSettings: designSettings || {
+      primaryColor: '#ffb68c',
+      backgroundColor: '#131315',
+      surfaceColor: '#1e1e22',
+      textColor: '#f0ede6',
+      accentColor: '#8ed5b4',
+      fontFamily: 'Be Vietnam Pro',
+      baseFontSize: 16,
+      borderRadius: 8,
+      spacingUnit: 16,
+      boxShadow: '0 8px 30px rgba(0, 0, 0, 0.4)',
+      containerMaxWidth: 1200,
+    },
+    assets: assets || [],
+  });
+  res.status(201).json(created);
+});
+
+app.put('/api/projects/:id', (req: Request, res: Response) => {
+  const updated = db.updateProject(req.params.id, req.body);
+  if (!updated) return res.status(404).json({ error: 'Project not found' });
+  res.json(updated);
+});
+
+app.delete('/api/projects/:id', (req: Request, res: Response) => {
+  const success = db.deleteProject(req.params.id);
+  if (!success) return res.status(404).json({ error: 'Project not found' });
+  res.json({ success: true });
+});
+
+// Image to Website Generation
+app.post('/api/ai/image-to-website', async (req: Request, res: Response) => {
+  const { imageBase64, mimeType, prompt, workbookId, title } = req.body;
+
+  try {
+    const result = await generateWebsiteFromImage({
+      imageBase64,
+      mimeType,
+      prompt,
+    });
+
+    const project = db.createProject({
+      workbookId: workbookId || 'epistemology-ai',
+      title: title || result.title,
+      description: prompt ? `Generated from: "${prompt.slice(0, 80)}"` : 'Synthesized from visual mockup.',
+      html: result.html,
+      css: result.css,
+      js: result.js,
+      designSettings: {
+        primaryColor: '#ffb68c',
+        backgroundColor: '#131315',
+        surfaceColor: '#1e1e22',
+        textColor: '#f0ede6',
+        accentColor: '#8ed5b4',
+        fontFamily: 'Be Vietnam Pro',
+        baseFontSize: 16,
+        borderRadius: 8,
+        spacingUnit: 16,
+        boxShadow: '0 8px 30px rgba(0, 0, 0, 0.4)',
+        containerMaxWidth: 1200,
+      },
+      assets: [],
+    });
+
+    res.status(201).json({
+      project,
+      model: result.model,
+      quotaStatus: keyManager.getStatus(),
+    });
+  } catch (err: any) {
+    console.error('Image-to-website error:', err);
+    res.status(500).json({
+      error: 'Failed to generate website from image',
+      details: err?.message || 'Server error',
+    });
+  }
+});
+
+// Regenerate Selected Section
+app.post('/api/ai/regenerate-section', async (req: Request, res: Response) => {
+  const { fullHtml, selectedSectionHtml, prompt } = req.body;
+  if (!selectedSectionHtml || !prompt) {
+    return res.status(400).json({ error: 'selectedSectionHtml and prompt are required' });
+  }
+
+  try {
+    const result = await regenerateWebsiteSection({
+      fullHtml: fullHtml || '',
+      selectedSectionHtml,
+      prompt,
+    });
+
+    res.json({
+      updatedSectionHtml: result.updatedSectionHtml,
+      model: result.model,
+      quotaStatus: keyManager.getStatus(),
+    });
+  } catch (err: any) {
+    console.error('Section regeneration error:', err);
+    res.status(500).json({
+      error: 'Failed to regenerate section',
+      details: err?.message || 'Server error',
+    });
+  }
+});
+
+// Prompt-based Website Edit
+app.post('/api/ai/edit-website', async (req: Request, res: Response) => {
+  const { html, css, js, prompt } = req.body;
+  if (!prompt) return res.status(400).json({ error: 'prompt is required' });
+
+  try {
+    const result = await editWebsiteWithPrompt({
+      html: html || '',
+      css: css || '',
+      js: js || '',
+      prompt,
+    });
+
+    res.json({
+      html: result.html,
+      css: result.css,
+      js: result.js,
+      explanation: result.explanation,
+      model: result.model,
+      quotaStatus: keyManager.getStatus(),
+    });
+  } catch (err: any) {
+    console.error('Edit website error:', err);
+    res.status(500).json({
+      error: 'Failed to edit website with prompt',
+      details: err?.message || 'Server error',
+    });
+  }
+});
+
+// Export Project as ZIP
+app.post('/api/export/zip', async (req: Request, res: Response) => {
+  const { title, html, css, js, readme } = req.body;
+  try {
+    const zip = new JSZip();
+    const safeTitle = (title || 'scholar-web-project').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+    zip.file('index.html', html || '<!DOCTYPE html><html><body></body></html>');
+    zip.file('style.css', css || '');
+    zip.file('script.js', js || '');
+    zip.file(
+      'README.md',
+      readme || `# ${title || 'Scholar Codex Project'}\n\nGenerated with Google AI Studio & Scholar Codex.\n\n## Getting Started\nOpen \`index.html\` in any modern browser.`
+    );
+
+    const content = await zip.generateAsync({ type: 'nodebuffer' });
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${safeTitle}.zip"`);
+    res.send(content);
+  } catch (err: any) {
+    console.error('ZIP generation error:', err);
+    res.status(500).json({ error: 'Failed to create ZIP package' });
+  }
+});
+
+// GitHub Export Integration
+app.post('/api/export/github', (req: Request, res: Response) => {
+  const { repoName, description, isPrivate, html, css, js } = req.body;
+  const safeName = (repoName || 'my-scholar-website').toLowerCase().replace(/[^a-z0-9-_]/g, '-');
+
+  const files = [
+    { path: 'index.html', content: html },
+    { path: 'style.css', content: css },
+    { path: 'script.js', content: js },
+    {
+      path: 'README.md',
+      content: `# ${safeName}\n\n${description || 'Web project created with Google AI Studio & Scholar Codex.'}\n\n## Deployment\nHost instantly on GitHub Pages, Vercel, or Netlify.`,
+    },
+  ];
+
+  res.json({
+    success: true,
+    repository: safeName,
+    visibility: isPrivate ? 'private' : 'public',
+    filesPrepared: files.length,
+    instructions: [
+      `git init`,
+      `git remote add origin https://github.com/username/${safeName}.git`,
+      `git add .`,
+      `git commit -m "Initial commit from Scholar Codex Website Studio"`,
+      `git push -u origin main`
+    ],
+    message: `Repository package "${safeName}" prepared for export.`,
+  });
+});
+
+// Assets Management
+app.get('/api/assets', (_req: Request, res: Response) => {
+  res.json(db.getAssets());
+});
+
+app.post('/api/assets', (req: Request, res: Response) => {
+  const { name, url, type, size, associatedSection } = req.body;
+  if (!name || !url) return res.status(400).json({ error: 'name and url are required' });
+  const asset = db.addAsset({
+    name,
+    url,
+    type: type || 'image',
+    size: size || '150 KB',
+    associatedSection,
+  });
+  res.status(201).json(asset);
+});
+
+app.delete('/api/assets/:id', (req: Request, res: Response) => {
+  const success = db.deleteAsset(req.params.id);
+  if (!success) return res.status(404).json({ error: 'Asset not found' });
+  res.json({ success: true });
+});
+
+// ==========================================
+// 8. PREFERENCES & EXPORT DOSSIER
+// ==========================================
+
 
 app.get('/api/preferences', (_req: Request, res: Response) => {
   res.json(db.getPreferences());

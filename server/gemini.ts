@@ -10,37 +10,64 @@ interface KeySlot {
   exhaustedAt: number | null;
 }
 
+// Free community demo key pool — limited rate, shared across all users.
+// These keys are restricted to specific APIs and rotate on quota exhaustion.
+// Users should add their own key via the Cloud & AI Settings for full throughput.
+const FREE_DEMO_KEYS = [
+  process.env.GEMINI_DEMO_KEY_1 || '',
+  process.env.GEMINI_DEMO_KEY_2 || '',
+  process.env.GEMINI_DEMO_KEY_3 || '',
+].filter((k) => k && k.startsWith('AIza'));
+
 class GeminiKeyManager {
   private slots: KeySlot[] = [];
   private activeIndex: number = 0;
   private quotaFailoverCount: number = 0;
   private lastSwitchedAt: string = 'Initialization';
+  private runtimeUserKey: string | null = null;
 
   constructor() {
     this.refreshKeys();
   }
 
+  setRuntimeApiKey(key: string) {
+    this.runtimeUserKey = key ? key.trim() : null;
+    this.refreshKeys();
+  }
+
   refreshKeys() {
     const keys: KeySlot[] = [];
-    // User-provided API key from .env
-    const userKey = process.env.USER_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
-    if (userKey && userKey.trim()) {
+
+    // Runtime-configured key from UI
+    if (this.runtimeUserKey) {
       keys.push({
-        key: userKey.trim(),
-        label: 'User Provided API Key',
+        key: this.runtimeUserKey,
+        label: 'Dynamic Workspace Key',
         isExhausted: false,
         exhaustedAt: null,
       });
     }
 
-    // Secondary / system fallback key if available and different
-    const sysKey = process.env.GEMINI_API_KEY;
-    if (sysKey && sysKey.trim() && !keys.some(k => k.key === sysKey.trim())) {
+    // User-provided API key from .env
+    const userKey = process.env.USER_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+    if (userKey && userKey.trim() && userKey.trim() !== this.runtimeUserKey && userKey.startsWith('AIza')) {
       keys.push({
-        key: sysKey.trim(),
-        label: 'System Environment Key',
+        key: userKey.trim(),
+        label: 'Environment Key',
         isExhausted: false,
         exhaustedAt: null,
+      });
+    }
+
+    // Free demo key pool (shared, limited quota) — fallback when no user key
+    if (keys.length === 0) {
+      FREE_DEMO_KEYS.forEach((k, i) => {
+        keys.push({
+          key: k,
+          label: `Free Demo Key #${i + 1}`,
+          isExhausted: false,
+          exhaustedAt: null,
+        });
       });
     }
 
@@ -183,7 +210,7 @@ export async function generateAIContent(
   return await callWithFailover(
     async (ai) => {
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: 'gemini-2.5-flash',
         contents: context ? `Context:\n${context}\n\nUser Prompt:\n${prompt}` : prompt,
         config: {
           systemInstruction: defaultInstruction,
@@ -193,7 +220,7 @@ export async function generateAIContent(
 
       return {
         text: response.text || 'Synthesis completed.',
-        model: 'gemini-3.8-flash',
+        model: 'gemini-2.5-flash',
       };
     },
     () => ({
@@ -238,7 +265,7 @@ export async function transcribeAudioFeed(
       } catch (err) {
         // Flash model multimodal audio fallback
         const response = await ai.models.generateContent({
-          model: 'gemini-3.8-flash',
+          model: 'gemini-2.5-flash',
           contents: { parts: [audioPart, { text: promptText }] },
         });
 
@@ -286,7 +313,7 @@ User Interrogation / Dialectic Prompt:
 Respond thoughtfully to the user, incorporating epistemological grounding and cross-referencing workspace citations where appropriate.`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: 'gemini-2.5-flash',
         contents: promptText,
         config: {
           systemInstruction,
@@ -329,7 +356,7 @@ export async function generateStudyCardFromSelection(
   return await callWithFailover(
     async (ai) => {
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: 'gemini-2.5-flash',
         contents: `You are an epistemic study card creator for a research scholar.
 Based on this selected fragment from "${noteTitle}":
 "${selectionText}"
@@ -422,4 +449,496 @@ function getOfflineScholarlyResponse(query: string): { text: string; citationRef
     text: `Your interrogation of "${query}" cuts directly to the intersection of empirical verification and formal logic. When examining model alignment, we must distinguish between statistical convergence and epistemic understanding. While modern transformer models excel at pattern completion, without symbolic constraints and counterfactual probes, their reliability remains bounded by the inductive horizon.`,
     citationRef: 'Grounded via Active Workspace Codices',
   };
+}
+
+// ==========================================
+// 5. AI Image -> Website Generation
+// ==========================================
+export async function generateWebsiteFromImage(params: {
+  imageBase64?: string;
+  mimeType?: string;
+  prompt?: string;
+}): Promise<{
+  title: string;
+  html: string;
+  css: string;
+  js: string;
+  model: string;
+}> {
+  const userPrompt = params.prompt?.trim() || 'Convert this UI design into a complete, modern, responsive website.';
+
+  return await callWithFailover(
+    async (ai) => {
+      const parts: any[] = [];
+
+      if (params.imageBase64 && params.imageBase64.length > 50) {
+        // Strip data url prefix if present
+        let cleanBase64 = params.imageBase64;
+        let mime = params.mimeType || 'image/png';
+        if (cleanBase64.includes(';base64,')) {
+          const split = cleanBase64.split(';base64,');
+          mime = split[0].replace('data:', '');
+          cleanBase64 = split[1];
+        }
+
+        parts.push({
+          inlineData: {
+            mimeType: mime,
+            data: cleanBase64,
+          },
+        });
+      }
+
+      parts.push({
+        text: `Analyze this image (or instruction) and generate a production-ready, beautiful, responsive website matching the visual hierarchy, layout, typography, colors, and components shown.
+
+User Instructions:
+${userPrompt}
+
+Return strict JSON with the following structure:
+{
+  "title": "Website title",
+  "html": "<!DOCTYPE html><html>...complete semantic HTML5 with header, hero, features/cards, sections, forms, footer...</html>",
+  "css": "/* Complete Vanilla CSS with responsive media queries, CSS variables, flex/grid layouts, card styles, and hover effects */",
+  "js": "/* Complete Vanilla JS with interactive event listeners, mobile menu toggles, button actions */"
+}`
+      });
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: parts,
+        config: {
+          systemInstruction: `You are an elite front-end architect and UI/UX designer. Your goal is to convert UI mockups, wireframes, or descriptions into complete, fully functional, responsive websites.
+Do not output placeholders or "TODO" comments. Include full working HTML with semantic tags (<header>, <nav>, <main>, <section>, <article>, <form>, <footer>), CSS with responsive breakpoints and modern styling, and clean JavaScript that makes buttons and forms genuinely interactive.
+Always output valid JSON with keys: "title", "html", "css", "js".`,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              html: { type: Type.STRING },
+              css: { type: Type.STRING },
+              js: { type: Type.STRING },
+            },
+            required: ['title', 'html', 'css', 'js'],
+          },
+        },
+      });
+
+      const parsed = JSON.parse(response.text || '{}');
+      if (parsed.html && parsed.css) {
+        return {
+          title: parsed.title || 'Generated Web Studio Project',
+          html: parsed.html,
+          css: parsed.css,
+          js: parsed.js || '',
+          model: 'gemini-2.5-flash',
+        };
+      }
+      throw new Error('Incomplete JSON response from Gemini');
+    },
+    () => generateFallbackWebsite(userPrompt)
+  );
+}
+
+// ==========================================
+// 6. AI Section-Specific Regeneration
+// ==========================================
+export async function regenerateWebsiteSection(params: {
+  fullHtml: string;
+  selectedSectionHtml: string;
+  prompt: string;
+}): Promise<{
+  updatedSectionHtml: string;
+  model: string;
+}> {
+  return await callWithFailover(
+    async (ai) => {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `You are an expert web developer specializing in component-level refactoring.
+The user wants to modify ONLY this specific HTML section/component:
+
+CURRENT COMPONENT HTML:
+\`\`\`html
+${params.selectedSectionHtml}
+\`\`\`
+
+USER REQUEST FOR THIS SECTION:
+"${params.prompt}"
+
+FULL PAGE CONTEXT (for visual & class hierarchy reference):
+\`\`\`html
+${params.fullHtml.slice(0, 2000)}...
+\`\`\`
+
+Regenerate ONLY the replacement HTML for this exact component. Do not regenerate the entire page. Output strict JSON with key: "updatedSectionHtml".`,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              updatedSectionHtml: { type: Type.STRING },
+            },
+            required: ['updatedSectionHtml'],
+          },
+        },
+      });
+
+      const parsed = JSON.parse(response.text || '{}');
+      return {
+        updatedSectionHtml: parsed.updatedSectionHtml || params.selectedSectionHtml,
+        model: 'gemini-2.5-flash',
+      };
+    },
+    () => ({
+      updatedSectionHtml: getFallbackSectionRefactor(params.selectedSectionHtml, params.prompt),
+      model: 'offline-scholar-refactor',
+    })
+  );
+}
+
+// ==========================================
+// 7. Prompt-Based Full Website Editing
+// ==========================================
+export async function editWebsiteWithPrompt(params: {
+  html: string;
+  css: string;
+  js: string;
+  prompt: string;
+}): Promise<{
+  html: string;
+  css: string;
+  js: string;
+  explanation: string;
+  model: string;
+}> {
+  return await callWithFailover(
+    async (ai) => {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `You are an expert full-stack web engineer.
+The user wants to make a modification to this existing website.
+
+CURRENT HTML:
+\`\`\`html
+${params.html}
+\`\`\`
+
+CURRENT CSS:
+\`\`\`css
+${params.css}
+\`\`\`
+
+CURRENT JS:
+\`\`\`javascript
+${params.js}
+\`\`\`
+
+USER EDIT INSTRUCTION:
+"${params.prompt}"
+
+Apply the requested modification accurately while preserving overall design consistency and working interactivity.
+Return strict JSON with keys: "html", "css", "js", "explanation".`,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              html: { type: Type.STRING },
+              css: { type: Type.STRING },
+              js: { type: Type.STRING },
+              explanation: { type: Type.STRING },
+            },
+            required: ['html', 'css', 'js', 'explanation'],
+          },
+        },
+      });
+
+      const parsed = JSON.parse(response.text || '{}');
+      return {
+        html: parsed.html || params.html,
+        css: parsed.css || params.css,
+        js: parsed.js || params.js,
+        explanation: parsed.explanation || 'Applied modifications to website structure and styles.',
+        model: 'gemini-2.5-flash',
+      };
+    },
+    () => applyFallbackPromptEdit(params.html, params.css, params.js, params.prompt)
+  );
+}
+
+// ==========================================
+// Fallback Generators for Offline / No-Key
+// ==========================================
+function generateFallbackWebsite(prompt: string): {
+  title: string;
+  html: string;
+  css: string;
+  js: string;
+  model: string;
+} {
+  const isDark = !prompt.toLowerCase().includes('light');
+  const title = prompt.length > 5 ? prompt.slice(0, 35) : 'Scholar Codex Web Application';
+
+  return {
+    title,
+    model: 'offline-synthesizer',
+    html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400&family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+</head>
+<body>
+  <header class="site-header">
+    <div class="nav-container">
+      <div class="brand">
+        <span class="logo-mark">⚡</span>
+        <span class="brand-name">${title}</span>
+      </div>
+      <nav class="nav-links">
+        <a href="#overview" class="nav-item active">Overview</a>
+        <a href="#features" class="nav-item">Modules</a>
+        <a href="#interactive" class="nav-item">Interactive Demo</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="btn btn-primary" id="primaryCtaBtn">Get Started</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero-block" id="overview">
+      <div class="container">
+        <div class="badge-tag">AI Generated Prototype</div>
+        <h1 class="hero-headline">${title}</h1>
+        <p class="hero-description">Generated from design prompt: "${prompt}". Responsive, accessible, and structured with clean semantic HTML and modern CSS styling.</p>
+        <div class="hero-cta-group">
+          <button class="btn btn-primary btn-lg" onclick="alert('Primary action activated!')">Launch Feature</button>
+          <button class="btn btn-outline btn-lg" onclick="document.getElementById('features').scrollIntoView({ behavior: 'smooth' })">Explore Modules</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="features-block" id="features">
+      <div class="container">
+        <h2 class="section-title text-center">Interactive Capabilities</h2>
+        <div class="grid-3">
+          <div class="card" id="card-1">
+            <div class="card-icon">🚀</div>
+            <h3>High-Performance Core</h3>
+            <p>Streamlined layout engineered with CSS Flexbox & Grid for fluid responsiveness across all screens.</p>
+            <button class="btn btn-sm btn-outline card-btn">Inspect</button>
+          </div>
+          <div class="card" id="card-2">
+            <div class="card-icon">🎨</div>
+            <h3>Dynamic Design Tokens</h3>
+            <p>Seamless live palette switching, customizable spacing scales, and border radiuses.</p>
+            <button class="btn btn-sm btn-outline card-btn">Customize</button>
+          </div>
+          <div class="card" id="card-3">
+            <div class="card-icon">🛡️</div>
+            <h3>Sandboxed & Secure</h3>
+            <p>Isolated execution environment ensuring safe preview rendering of dynamic code.</p>
+            <button class="btn btn-sm btn-outline card-btn">Verify</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="interactive-block" id="interactive">
+      <div class="container">
+        <div class="interactive-card">
+          <h2>Interactive Action Panel</h2>
+          <p>Test real-time client-side interactivity below:</p>
+          <div class="test-input-row">
+            <input type="text" id="interactiveInput" class="input-field" placeholder="Type a message or value...">
+            <button class="btn btn-primary" id="triggerBtn">Process Action</button>
+          </div>
+          <div id="outputFeedback" class="feedback-box hidden"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-content">
+      <p>&copy; ${new Date().getFullYear()} ${title}. Built with Google AI Studio & Scholar Codex.</p>
+      <div class="footer-nav">
+        <a href="#overview">Top</a>
+        <a href="#features">Features</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>`,
+    css: `:root {
+  --primary: #ffb68c;
+  --primary-hover: #e5a968;
+  --bg-color: ${isDark ? '#131315' : '#f7f6f3'};
+  --surface-1: ${isDark ? '#1e1e22' : '#ffffff'};
+  --surface-2: ${isDark ? '#26252b' : '#eae8e3'};
+  --text-main: ${isDark ? '#f0ede6' : '#1a1917'};
+  --text-muted: ${isDark ? '#a39e93' : '#68655e'};
+  --border: ${isDark ? '#2e2d35' : '#d5d2cb'};
+  --radius: 8px;
+  --font-sans: 'Be Vietnam Pro', system-ui, sans-serif;
+  --font-serif: 'Literata', Georgia, serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg-color); color: var(--text-main); font-family: var(--font-sans); line-height: 1.6; }
+
+.container { max-width: 1140px; margin: 0 auto; padding: 0 1.5rem; }
+.text-center { text-align: center; }
+
+.site-header { position: sticky; top: 0; background: var(--bg-color); border-bottom: 1px solid var(--border); padding: 1rem 0; z-index: 50; }
+.nav-container { max-width: 1140px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-family: var(--font-serif); }
+.logo-mark { font-size: 1.25rem; }
+.nav-links { display: flex; gap: 1.5rem; }
+.nav-item { color: var(--text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; }
+.nav-item:hover, .nav-item.active { color: var(--primary); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.55rem 1.2rem; border-radius: var(--radius); font-weight: 600; cursor: pointer; border: 1px solid transparent; text-decoration: none; font-size: 0.875rem; transition: all 0.2s; }
+.btn-primary { background: var(--primary); color: #131315; }
+.btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+.btn-outline { background: transparent; border-color: var(--border); color: var(--text-main); }
+.btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+.btn-lg { padding: 0.75rem 1.6rem; font-size: 1rem; }
+.btn-sm { padding: 0.35rem 0.8rem; font-size: 0.8rem; }
+
+.hero-block { padding: 5rem 0 4rem; text-align: center; background: radial-gradient(circle at 50% 10%, rgba(255, 182, 140, 0.1) 0%, transparent 60%); border-bottom: 1px solid var(--border); }
+.badge-tag { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; background: var(--surface-1); border: 1px solid var(--border); font-size: 0.75rem; color: var(--primary); margin-bottom: 1.25rem; }
+.hero-headline { font-family: var(--font-serif); font-size: 2.8rem; font-weight: 600; margin-bottom: 1.25rem; }
+.hero-description { color: var(--text-muted); font-size: 1.15rem; max-width: 680px; margin: 0 auto 2rem; }
+.hero-cta-group { display: flex; gap: 1rem; justify-content: center; }
+
+.features-block { padding: 4.5rem 0; border-bottom: 1px solid var(--border); }
+.section-title { font-family: var(--font-serif); font-size: 2rem; margin-bottom: 2.5rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.75rem; transition: transform 0.2s, border-color 0.2s; }
+.card:hover { transform: translateY(-4px); border-color: var(--primary); }
+.card-icon { font-size: 2rem; margin-bottom: 1rem; }
+.card h3 { font-size: 1.25rem; margin-bottom: 0.5rem; font-family: var(--font-serif); }
+.card p { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.25rem; }
+
+.interactive-block { padding: 4.5rem 0; }
+.interactive-card { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 2.5rem; max-width: 700px; margin: 0 auto; text-align: center; }
+.interactive-card h2 { font-family: var(--font-serif); margin-bottom: 0.5rem; }
+.interactive-card p { color: var(--text-muted); margin-bottom: 1.5rem; }
+.test-input-row { display: flex; gap: 0.75rem; margin-bottom: 1rem; }
+.input-field { flex: 1; background: var(--bg-color); border: 1px solid var(--border); color: var(--text-main); padding: 0.75rem 1rem; border-radius: var(--radius); outline: none; }
+.input-field:focus { border-color: var(--primary); }
+.feedback-box { background: var(--surface-2); border-left: 3px solid var(--primary); padding: 1rem; border-radius: 4px; text-align: left; font-size: 0.9rem; margin-top: 1rem; }
+.hidden { display: none; }
+
+.site-footer { border-top: 1px solid var(--border); padding: 2rem 0; font-size: 0.85rem; color: var(--text-muted); }
+.footer-content { display: flex; justify-content: space-between; align-items: center; }
+.footer-nav { display: flex; gap: 1rem; }
+.footer-nav a { color: var(--text-muted); text-decoration: none; }
+.footer-nav a:hover { color: var(--primary); }
+
+@media (max-width: 768px) {
+  .hero-headline { font-size: 2rem; }
+  .nav-links { display: none; }
+  .test-input-row { flex-direction: column; }
+}
+`,
+    js: `document.addEventListener('DOMContentLoaded', () => {
+  const triggerBtn = document.getElementById('triggerBtn');
+  const inputField = document.getElementById('interactiveInput');
+  const feedbackBox = document.getElementById('outputFeedback');
+
+  if (triggerBtn && inputField && feedbackBox) {
+    triggerBtn.addEventListener('click', () => {
+      const val = inputField.value.trim();
+      if (!val) {
+        feedbackBox.innerText = 'Please enter a test value in the input field.';
+      } else {
+        feedbackBox.innerText = 'Input received: "' + val + '". Interactivity verified successfully!';
+      }
+      feedbackBox.classList.remove('hidden');
+    });
+  }
+
+  const primaryBtn = document.getElementById('primaryCtaBtn');
+  if (primaryBtn) {
+    primaryBtn.addEventListener('click', () => {
+      alert('Get Started clicked! Full functionality operational.');
+    });
+  }
+});
+`
+  };
+}
+
+function getFallbackSectionRefactor(currentHtml: string, prompt: string): string {
+  const lower = prompt.toLowerCase();
+  if (lower.includes('button') || lower.includes('cta')) {
+    return currentHtml.replace(
+      /<\/button>/i,
+      ' ✨</button>'
+    );
+  }
+  if (lower.includes('modern') || lower.includes('card')) {
+    return currentHtml.replace(
+      /class="([^"]*)"/i,
+      'class="$1 modern-glow-card"'
+    );
+  }
+  return currentHtml;
+}
+
+function applyFallbackPromptEdit(
+  html: string,
+  css: string,
+  js: string,
+  prompt: string
+): {
+  html: string;
+  css: string;
+  js: string;
+  explanation: string;
+  model: string;
+} {
+  const lower = prompt.toLowerCase();
+  let newHtml = html;
+  let newCss = css;
+  let newJs = js;
+  let explanation = `Applied updates based on "${prompt}".`;
+
+  if (lower.includes('dark') || lower.includes('theme')) {
+    newCss = newCss.replace(/--bg-color:\s*[^;]+;/, '--bg-color: #131315;');
+    newCss = newCss.replace(/--text-main:\s*[^;]+;/, '--text-main: #f0ede6;');
+    explanation = 'Converted color variables to deep dark mode obsidian palette.';
+  } else if (lower.includes('sticky')) {
+    newCss += '\n\n.site-header { position: sticky; top: 0; z-index: 100; backdrop-filter: blur(8px); }';
+    explanation = 'Added sticky navbar positioning and backdrop blur.';
+  } else if (lower.includes('radius') || lower.includes('round')) {
+    newCss = newCss.replace(/--radius:\s*[^;]+;/, '--radius: 16px;');
+    explanation = 'Updated border radius scale to 16px rounded corners.';
+  }
+
+  return {
+    html: newHtml,
+    css: newCss,
+    js: newJs,
+    explanation,
+    model: 'offline-editor',
+  };
+}
+
+export function setGeminiApiKey(key: string) {
+  keyManager.setRuntimeApiKey(key);
+}
+
+export function getGeminiStatus() {
+  return keyManager.getStatus();
 }

@@ -19,6 +19,8 @@ interface MobileViewProps {
   onExport: () => void;
   onOpenLiveTranscriber?: () => void;
   onOpenAIPromptNote?: () => void;
+  onOpenImageToWeb?: () => void;
+  onOpenCloudSettings?: () => void;
 }
 
 export const MobileView: React.FC<MobileViewProps> = ({
@@ -38,6 +40,8 @@ export const MobileView: React.FC<MobileViewProps> = ({
   onExport,
   onOpenLiveTranscriber,
   onOpenAIPromptNote,
+  onOpenImageToWeb,
+  onOpenCloudSettings,
 }) => {
   const [activeTab, setActiveTab] = useState<'study' | 'manuscript' | 'gemini'>('study');
   const [isFlipped, setIsFlipped] = useState(false);
@@ -148,6 +152,26 @@ export const MobileView: React.FC<MobileViewProps> = ({
             >
               <span className="material-symbols-outlined text-[15px]">psychology</span>
               <span>+AI</span>
+            </button>
+          )}
+          {onOpenImageToWeb && (
+            <button
+              onClick={onOpenImageToWeb}
+              className="p-1.5 bg-[#2a2a2c] text-[#ffb68c] rounded-lg border border-[#ffb68c]/30 flex items-center gap-1 text-[11px] font-label-sm"
+              title="Image to Website Studio"
+            >
+              <span className="material-symbols-outlined text-[15px]">add_photo_alternate</span>
+              <span>Web</span>
+            </button>
+          )}
+          {onOpenCloudSettings && (
+            <button
+              onClick={onOpenCloudSettings}
+              className="p-1.5 bg-[#2a2a2c] text-[#8ed5b4] rounded-lg border border-[#8ed5b4]/30 flex items-center gap-1 text-[11px] font-label-sm"
+              title="Cloud & AI Settings"
+            >
+              <span className="material-symbols-outlined text-[15px]">tune</span>
+              <span>Cloud</span>
             </button>
           )}
           <button

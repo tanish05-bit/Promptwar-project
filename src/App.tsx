@@ -7,6 +7,8 @@ import {
   GeminiMessage,
   ViewLayoutMode,
   ScholarPreferences,
+  WebsiteProject,
+  AppWorkspaceMode,
 } from './types';
 import { Sidebar } from './components/Sidebar';
 import { TopNav } from './components/TopNav';
@@ -21,6 +23,11 @@ import { UserProfileModal } from './components/UserProfileModal';
 import { SourceViewerModal } from './components/SourceViewerModal';
 import { NewWorkbookModal } from './components/NewWorkbookModal';
 import { MobileView } from './components/MobileView';
+import { WebsiteStudio } from './components/WebsiteStudio';
+import { ImageToWebModal } from './components/ImageToWebModal';
+import { ExportProjectModal } from './components/ExportProjectModal';
+import { AssetManagerModal } from './components/AssetManagerModal';
+import { CloudAndAISettingsModal } from './components/CloudAndAISettingsModal';
 
 export default function App() {
   // State management
@@ -41,7 +48,12 @@ export default function App() {
     highYieldOnly: false,
   });
 
-  // UI state
+  // Website Studio State
+  const [workspaceMode, setWorkspaceMode] = useState<AppWorkspaceMode>('desk');
+  const [projects, setProjects] = useState<WebsiteProject[]>([]);
+  const [activeProjectId, setActiveProjectId] = useState<string>('proj-codex-hub');
+
+  // UI Modals State
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false);
   const [isAudioModalOpen, setIsAudioModalOpen] = useState(false);
   const [isLiveTranscriberOpen, setIsLiveTranscriberOpen] = useState(false);
@@ -51,10 +63,15 @@ export default function App() {
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
   const [isSourceAddMode, setIsSourceAddMode] = useState(false);
   const [isNewWorkbookModalOpen, setIsNewWorkbookModalOpen] = useState(false);
+  const [isImageToWebModalOpen, setIsImageToWebModalOpen] = useState(false);
+  const [isExportProjectModalOpen, setIsExportProjectModalOpen] = useState(false);
+  const [isAssetManagerModalOpen, setIsAssetManagerModalOpen] = useState(false);
+  const [isCloudSettingsOpen, setIsCloudSettingsOpen] = useState(false);
   const [isGeneratingCard, setIsGeneratingCard] = useState(false);
   const [isGeminiChatLoading, setIsGeminiChatLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState<boolean>(false);
+
 
   // Responsive window listener
   useEffect(() => {
@@ -75,13 +92,14 @@ export default function App() {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const [wbRes, notesRes, cardsRes, sourcesRes, chatRes, prefRes] = await Promise.all([
+        const [wbRes, notesRes, cardsRes, sourcesRes, chatRes, prefRes, projRes] = await Promise.all([
           fetch('/api/workbooks').then((r) => r.json()),
           fetch('/api/notes').then((r) => r.json()),
           fetch('/api/cards').then((r) => r.json()),
           fetch('/api/sources').then((r) => r.json()),
           fetch('/api/chat').then((r) => r.json()),
           fetch('/api/preferences').then((r) => r.json()),
+          fetch('/api/projects').then((r) => r.json()),
         ]);
 
         if (Array.isArray(wbRes)) setWorkbooks(wbRes);
@@ -93,6 +111,10 @@ export default function App() {
         if (Array.isArray(sourcesRes)) setSources(sourcesRes);
         if (Array.isArray(chatRes)) setGeminiMessages(chatRes);
         if (prefRes && prefRes.theme) setPreferences(prefRes);
+        if (Array.isArray(projRes) && projRes.length > 0) {
+          setProjects(projRes);
+          setActiveProjectId(projRes[0].id);
+        }
       } catch (err) {
         console.error('Failed fetching data from server, using local fallback:', err);
       }
@@ -108,14 +130,19 @@ export default function App() {
 
   const activeNote = notes.find((n) => n.id === currentNoteId) || notes[0];
 
+  const activeProject =
+    projects.find((p) => p.id === activeProjectId || p.workbookId === currentWorkbookId) ||
+    projects[0];
+
   // Handlers
   const handleSelectWorkbook = async (id: string) => {
     setCurrentWorkbookId(id);
     try {
-      const [notesRes, cardsRes, sourcesRes] = await Promise.all([
+      const [notesRes, cardsRes, sourcesRes, projRes] = await Promise.all([
         fetch(`/api/notes?workbookId=${id}`).then((r) => r.json()),
         fetch(`/api/cards?workbookId=${id}`).then((r) => r.json()),
         fetch(`/api/sources?workbookId=${id}`).then((r) => r.json()),
+        fetch(`/api/projects?workbookId=${id}`).then((r) => r.json()),
       ]);
       if (Array.isArray(notesRes) && notesRes.length > 0) {
         setNotes(notesRes);
@@ -126,11 +153,44 @@ export default function App() {
         setActiveCardIndex(0);
       }
       if (Array.isArray(sourcesRes)) setSources(sourcesRes);
+      if (Array.isArray(projRes) && projRes.length > 0) {
+        setProjects(projRes);
+        setActiveProjectId(projRes[0].id);
+      }
       showToast(`Switched to Codex: ${workbooks.find((w) => w.id === id)?.name || id}`);
     } catch (e) {
       console.error(e);
     }
   };
+
+  const handleUpdateActiveProject = async (updates: Partial<WebsiteProject>) => {
+    if (!activeProject) return;
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === activeProject.id
+          ? { ...p, ...updates, updatedAt: new Date().toISOString() }
+          : p
+      )
+    );
+
+    try {
+      await fetch(`/api/projects/${activeProject.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleWebsiteCreated = (newProject: WebsiteProject) => {
+    setProjects((prev) => [newProject, ...prev]);
+    setActiveProjectId(newProject.id);
+    setWorkspaceMode('website-studio');
+    showToast(`Loaded "${newProject.title}" in Website Studio`);
+  };
+
 
   const handleUpdateNote = async (noteId: string, updates: Partial<Note>) => {
     // Optimistic update
@@ -416,6 +476,8 @@ export default function App() {
             }}
             onOpenLiveTranscriber={() => setIsLiveTranscriberOpen(true)}
             onOpenAIPromptNote={() => setIsAIPromptModalOpen(true)}
+            onOpenImageToWeb={() => setIsImageToWebModalOpen(true)}
+            onOpenCloudSettings={() => setIsCloudSettingsOpen(true)}
           />
 
           <Sidebar
@@ -464,6 +526,9 @@ export default function App() {
                 breadcrumb={`${activeWorkbook?.name || 'Epistemology & AI'}-094`}
                 viewMode={preferences.activeViewMode}
                 onChangeViewMode={(mode) => setPreferences({ ...preferences, activeViewMode: mode })}
+                workspaceMode={workspaceMode}
+                onChangeWorkspaceMode={(mode) => setWorkspaceMode(mode)}
+                onOpenImageToWeb={() => setIsImageToWebModalOpen(true)}
                 sources={sources}
                 onOpenAddSource={() => {
                   setIsSourceAddMode(true);
@@ -473,88 +538,103 @@ export default function App() {
                 onRecordMemo={() => setIsAudioModalOpen(true)}
                 onOpenAIPromptNote={() => setIsAIPromptModalOpen(true)}
                 onOpenLiveTranscriber={() => setIsLiveTranscriberOpen(true)}
+                onOpenCloudSettings={() => setIsCloudSettingsOpen(true)}
               />
 
-              {/* Primary Dual-Desk Grid Layout: 7 Columns Manuscript, 5 Columns Study & AI */}
-              <div
-                className={`grid gap-6 ${
-                  preferences.activeViewMode === 'folio'
-                    ? 'grid-cols-1 max-w-4xl mx-auto'
-                    : 'grid-cols-1 lg:grid-cols-12'
-                }`}
-              >
-                {/* Left Column (Manuscript & Scribe Worktable) */}
+              {/* Toggle: Website Studio vs Manuscript Desk */}
+              {workspaceMode === 'website-studio' && activeProject ? (
+                <WebsiteStudio
+                  project={activeProject}
+                  workbookId={currentWorkbookId}
+                  onUpdateProject={handleUpdateActiveProject}
+                  onOpenImageToWebModal={() => setIsImageToWebModalOpen(true)}
+                  onOpenExportModal={() => setIsExportProjectModalOpen(true)}
+                  onOpenAssetModal={() => setIsAssetManagerModalOpen(true)}
+                  onSwitchToDesk={() => setWorkspaceMode('desk')}
+                  showToast={showToast}
+                />
+              ) : (
+                /* Primary Dual-Desk Grid Layout: 7 Columns Manuscript, 5 Columns Study & AI */
                 <div
-                  className={
+                  className={`grid gap-6 ${
                     preferences.activeViewMode === 'folio'
-                      ? 'w-full'
-                      : 'lg:col-span-7 flex flex-col'
-                  }
+                      ? 'grid-cols-1 max-w-4xl mx-auto'
+                      : 'grid-cols-1 lg:grid-cols-12'
+                  }`}
                 >
-                  {activeNote ? (
-                    <ManuscriptDesk
-                      note={activeNote}
-                      sources={sources}
-                      onUpdateNote={handleUpdateNote}
-                      onGenerateCardFromSelection={handleGenerateCardFromSelection}
-                      onAskGeminiPrompt={handleSendGeminiMessage}
-                      onSelectCitation={(citId) => {
-                        const src = sources.find((s) => s.id === citId) || sources[0];
-                        setSelectedSourceForView(src);
-                        setIsSourceAddMode(false);
-                        setIsSourceModalOpen(true);
-                      }}
-                      onOpenSourceDetails={(src) => {
-                        setSelectedSourceForView(src);
-                        setIsSourceAddMode(false);
-                        setIsSourceModalOpen(true);
-                      }}
-                      onAttachMedia={() => {
-                        setIsSourceAddMode(true);
-                        setIsSourceModalOpen(true);
-                      }}
-                      isGeneratingCard={isGeneratingCard}
-                    />
-                  ) : (
-                    <div className="p-8 bg-[#1b1b1d] rounded-xl text-center text-[#dbc1b4]">
-                      Loading Manuscript...
+                  {/* Left Column (Manuscript & Scribe Worktable) */}
+                  <div
+                    className={
+                      preferences.activeViewMode === 'folio'
+                        ? 'w-full'
+                        : 'lg:col-span-7 flex flex-col'
+                    }
+                  >
+                    {activeNote ? (
+                      <ManuscriptDesk
+                        note={activeNote}
+                        sources={sources}
+                        onUpdateNote={handleUpdateNote}
+                        onGenerateCardFromSelection={handleGenerateCardFromSelection}
+                        onAskGeminiPrompt={handleSendGeminiMessage}
+                        onSelectCitation={(citId) => {
+                          const src = sources.find((s) => s.id === citId) || sources[0];
+                          setSelectedSourceForView(src);
+                          setIsSourceAddMode(false);
+                          setIsSourceModalOpen(true);
+                        }}
+                        onOpenSourceDetails={(src) => {
+                          setSelectedSourceForView(src);
+                          setIsSourceAddMode(false);
+                          setIsSourceModalOpen(true);
+                        }}
+                        onAttachMedia={() => {
+                          setIsSourceAddMode(true);
+                          setIsSourceModalOpen(true);
+                        }}
+                        isGeneratingCard={isGeneratingCard}
+                      />
+                    ) : (
+                      <div className="p-8 bg-[#1b1b1d] rounded-xl text-center text-[#dbc1b4]">
+                        Loading Manuscript...
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Column (Study Card Deck & Gemini Companion) */}
+                  {preferences.activeViewMode !== 'folio' && (
+                    <div className="lg:col-span-5 flex flex-col gap-6">
+                      {/* Activity Study Card Deck */}
+                      <StudyCardDeck
+                        cards={cards}
+                        activeCardIndex={activeCardIndex}
+                        onSelectCardIndex={setActiveCardIndex}
+                        onReviewCard={handleReviewCard}
+                        onTogglePinCard={handleTogglePinCard}
+                        onAddNewCardModal={() =>
+                          handleGenerateCardFromSelection(
+                            activeNote?.content.slice(0, 180) || 'Humean problem of induction'
+                          )
+                        }
+                      />
+
+                      {/* Gemini Dialectic Companion */}
+                      <GeminiDialectic
+                        messages={geminiMessages}
+                        onSendMessage={handleSendGeminiMessage}
+                        isLoading={isGeminiChatLoading}
+                        onOpenExcerpt={(refText) => {
+                          const src = sources.find((s) => s.name.includes('Russell') || s.name.includes('Tape')) || sources[0];
+                          setSelectedSourceForView(src);
+                          setIsSourceAddMode(false);
+                          setIsSourceModalOpen(true);
+                        }}
+                        groundedSourceCount={sources.length}
+                      />
                     </div>
                   )}
                 </div>
-
-                {/* Right Column (Study Card Deck & Gemini Companion) */}
-                {preferences.activeViewMode !== 'folio' && (
-                  <div className="lg:col-span-5 flex flex-col gap-6">
-                    {/* Activity Study Card Deck */}
-                    <StudyCardDeck
-                      cards={cards}
-                      activeCardIndex={activeCardIndex}
-                      onSelectCardIndex={setActiveCardIndex}
-                      onReviewCard={handleReviewCard}
-                      onTogglePinCard={handleTogglePinCard}
-                      onAddNewCardModal={() =>
-                        handleGenerateCardFromSelection(
-                          activeNote?.content.slice(0, 180) || 'Humean problem of induction'
-                        )
-                      }
-                    />
-
-                    {/* Gemini Dialectic Companion */}
-                    <GeminiDialectic
-                      messages={geminiMessages}
-                      onSendMessage={handleSendGeminiMessage}
-                      isLoading={isGeminiChatLoading}
-                      onOpenExcerpt={(refText) => {
-                        const src = sources.find((s) => s.name.includes('Russell') || s.name.includes('Tape')) || sources[0];
-                        setSelectedSourceForView(src);
-                        setIsSourceAddMode(false);
-                        setIsSourceModalOpen(true);
-                      }}
-                      groundedSourceCount={sources.length}
-                    />
-                  </div>
-                )}
-              </div>
+              )}
             </main>
           </div>
         </div>
@@ -582,9 +662,38 @@ export default function App() {
         onCreate={handleCreateWorkbook}
       />
 
+      {/* Image-to-Website Conversion Modal */}
+      <ImageToWebModal
+        isOpen={isImageToWebModalOpen}
+        onClose={() => setIsImageToWebModalOpen(false)}
+        workbookId={currentWorkbookId}
+        onWebsiteCreated={handleWebsiteCreated}
+        showToast={showToast}
+      />
+
+      {/* Export Project Modal */}
+      {activeProject && (
+        <ExportProjectModal
+          isOpen={isExportProjectModalOpen}
+          onClose={() => setIsExportProjectModalOpen(false)}
+          project={activeProject}
+          showToast={showToast}
+        />
+      )}
+
+      {/* Asset Manager Modal */}
+      <AssetManagerModal
+        isOpen={isAssetManagerModalOpen}
+        onClose={() => setIsAssetManagerModalOpen(false)}
+        projectHtml={activeProject?.html || ''}
+        onUpdateHtml={(newHtml) => handleUpdateActiveProject({ html: newHtml })}
+        showToast={showToast}
+      />
+
       {/* Live Audio Feed Transcriber Powered by Gemini */}
       <LiveAudioTranscriberModal
         isOpen={isLiveTranscriberOpen}
+
         onClose={() => setIsLiveTranscriberOpen(false)}
         currentWorkbookId={currentWorkbookId}
         onNoteCreated={handleNoteCreated}
@@ -604,6 +713,13 @@ export default function App() {
       <UserProfileModal
         isOpen={isUserProfileModalOpen}
         onClose={() => setIsUserProfileModalOpen(false)}
+      />
+
+      {/* Cloud & AI Engine Configuration (Gemini API & Firebase) */}
+      <CloudAndAISettingsModal
+        isOpen={isCloudSettingsOpen}
+        onClose={() => setIsCloudSettingsOpen(false)}
+        activeProject={activeProject}
       />
     </div>
   );
